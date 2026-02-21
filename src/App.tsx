@@ -127,8 +127,8 @@ export default function App() {
       {/* Official Print Header (Hidden on Screen) */}
       <div className="hidden print:block text-center space-y-1 mb-8 border-b-2 border-black pb-6">
         <h2 className="text-xl font-bold uppercase">Kenya Dairy Board - Kericho</h2>
-        <p className="text-sm">Ardhi House 5th Floor, Wing B. Temple Road</p>
-        <p className="text-sm">Tel: 0734026367</p>
+        <p className="text-sm">Ardhi House (Huduma Centre) 5th Floor, Wing B.</p>
+        <p className="text-sm">Tel: 0717997465 / 0734026367</p>
         <div className="pt-4">
           <h1 className="text-2xl font-black underline decoration-2 underline-offset-4">CONSUMER SAFETY LEVY ESTIMATE</h1>
         </div>
@@ -144,9 +144,9 @@ export default function App() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <TrendingUp className="text-blue-500" size={28} />
-            <h1 className="text-3xl font-bold tracking-tight">Arrears Master</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Levy Calculator</h1>
           </div>
-          <p className="text-zinc-500 text-sm">Automated utility compounding & arrears sequencing</p>
+          <p className="text-zinc-500 text-sm">Official utility compounding & arrears sequencing</p>
         </div>
         
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full lg:w-auto">
@@ -209,7 +209,7 @@ export default function App() {
         <div className="lg:col-span-2 space-y-6">
           <div className="glass-card overflow-hidden print:border-none print:shadow-none">
             <div className="overflow-x-auto">
-              <table className="w-full data-table">
+              <table className="w-full data-table print:font-condensed">
                 <thead>
                   <tr>
                     <th>Month</th>
@@ -357,16 +357,16 @@ export default function App() {
             </div>
           </div>
 
-          <div className="glass-card p-6 bg-blue-500/5 border-blue-500/20 print:bg-zinc-50 print:border-zinc-200">
-            <div className="flex justify-between items-start mb-4 print:hidden">
-              <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500">
-                <FileText size={20} />
+          <div className="glass-card p-4 bg-blue-500/5 border-blue-500/20 print:bg-zinc-50 print:border-zinc-200 print:mt-0">
+            <div className="flex justify-between items-start mb-2 print:hidden">
+              <div className="p-1.5 bg-blue-500/10 rounded-lg text-blue-500">
+                <FileText size={18} />
               </div>
               <span className="text-[10px] font-bold uppercase tracking-widest text-blue-500/50">Final Invoice</span>
             </div>
-            <div className="space-y-1">
-              <p className="text-zinc-500 text-xs uppercase tracking-widest print:text-black">Grand Total Due (Ksh)</p>
-              <p className="text-4xl font-bold tracking-tighter text-white print:text-black print:text-2xl">
+            <div className="space-y-0.5">
+              <p className="text-zinc-500 text-[10px] uppercase tracking-widest print:text-black">Grand Total Due (Ksh)</p>
+              <p className="text-3xl font-bold tracking-tighter text-white print:text-black print:text-xl">
                 {totals.total.toLocaleString()}
               </p>
             </div>
@@ -382,9 +382,9 @@ export default function App() {
       </div>
 
       {/* Official Print Footer (Hidden on Screen) */}
-      <div className="hidden print:block pt-12 border-t border-zinc-200 mt-12">
+      <div className="hidden print:block pt-8 border-t border-zinc-200 mt-8">
         <p className="text-sm italic leading-relaxed text-zinc-700">
-          Levy is due before the 10th of every Month and is due immediately when submitted as stipulated by the Dairy Industry Act and its subsidiary regulations.
+          Levy is due before the 10th of every month and is payable immediately upon submission, as stipulated by the Dairy Industry Act and its subsidiary regulations.
         </p>
         <div className="mt-12 flex justify-between items-end">
           <div className="space-y-8">
@@ -392,7 +392,6 @@ export default function App() {
             <p className="text-[10px] uppercase font-bold tracking-widest">Authorized Signature</p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] text-zinc-400">Generated via Arrears Master Utility</p>
           </div>
         </div>
       </div>

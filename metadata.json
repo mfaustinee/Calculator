@@ -1,5 +1,5 @@
 {
-  "name": "Arrears Master",
-  "description": "Professional utility arrears calculator with automated levy and penalty compounding logic.",
+  "name": "Kenya Dairy Board Levy Calculator",
+  "description": "Professional utility arrears calculator and levy estimate generator for the Kericho office.",
   "requestFramePermissions": []
 }

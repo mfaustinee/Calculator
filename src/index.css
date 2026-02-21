@@ -77,13 +77,18 @@ body {
 
 @media print {
   @page {
-    margin: 1cm;
+    margin: 0;
     size: portrait;
   }
   
   body {
     background: white !important;
     color: black !important;
+    padding: 1.5cm;
+  }
+
+  .font-condensed {
+    font-family: "Arial Nova Cond", "Arial Narrow", Arial, sans-serif-condensed, sans-serif !important;
   }
 
   .no-print, 
