@@ -12,7 +12,8 @@ import {
   Calendar,
   Layers,
   Upload,
-  Image as ImageIcon
+  Image as ImageIcon,
+  User
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -58,6 +59,7 @@ export default function App() {
   });
 
   const [signature, setSignature] = useState<string | null>(null);
+  const [officerName, setOfficerName] = useState<string>('');
 
   const handleSignatureUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -386,9 +388,24 @@ export default function App() {
               </p>
             </div>
 
-            <div className="mt-6 space-y-2 print:hidden">
-              <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Authorized Signature</label>
-              <div className="relative group">
+            <div className="mt-6 space-y-4 print:hidden">
+              <div className="space-y-2">
+                <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Signing Officer Name</label>
+                <div className="flex items-center gap-2 glass-card px-3 py-2">
+                  <User size={14} className="text-zinc-500" />
+                  <input 
+                    type="text" 
+                    value={officerName} 
+                    onChange={(e) => setOfficerName(e.target.value)}
+                    placeholder="Enter Officer Name"
+                    className="bg-transparent font-mono text-xs focus:outline-none w-full text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Authorized Signature</label>
+                <div className="relative group">
                 <input 
                   type="file" 
                   accept="image/*"
@@ -410,6 +427,7 @@ export default function App() {
                 </div>
               </div>
             </div>
+          </div>
 
             <button 
               onClick={() => window.print()}
@@ -428,13 +446,15 @@ export default function App() {
           Levy is due before the 10th of every month and is payable immediately upon submission, as stipulated by the Dairy Industry Act (Cap 336) and its subsidiary regulations.
         </p>
         <div className="mt-12 flex justify-between items-end">
-          <div className="space-y-2">
+          <div className="space-y-1">
             {signature && (
-              <div className="mb-[-10px] ml-4">
+              <div className="mb-2 ml-4">
                 <img src={signature} alt="Signature" className="h-12 object-contain" />
               </div>
             )}
-            <div className="w-48 border-b border-black"></div>
+            {officerName && (
+              <p className="text-sm font-bold uppercase border-b border-black pb-1 mb-1">{officerName}</p>
+            )}
             <p className="text-[10px] uppercase font-bold tracking-widest">Authorized Signature</p>
           </div>
           <div className="text-right">
