@@ -10,7 +10,9 @@ import {
   FileText,
   Settings as SettingsIcon,
   Calendar,
-  Layers
+  Layers,
+  Upload,
+  Image as ImageIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -54,6 +56,19 @@ export default function App() {
     3: 7094,
     4: 10422
   });
+
+  const [signature, setSignature] = useState<string | null>(null);
+
+  const handleSignatureUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSignature(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const baseDate = useMemo(() => new Date(baseMonth + '-01'), [baseMonth]);
 
@@ -370,6 +385,32 @@ export default function App() {
                 {totals.total.toLocaleString()}
               </p>
             </div>
+
+            <div className="mt-6 space-y-2 print:hidden">
+              <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Authorized Signature</label>
+              <div className="relative group">
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={handleSignatureUpload}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                />
+                <div className="flex items-center justify-center gap-2 py-3 border-2 border-dashed border-zinc-800 rounded-xl group-hover:border-blue-500/50 transition-colors bg-white/[0.02]">
+                  {signature ? (
+                    <div className="flex items-center gap-2">
+                      <ImageIcon size={16} className="text-emerald-500" />
+                      <span className="text-xs text-emerald-500 font-medium">Signature Loaded</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-zinc-500">
+                      <Upload size={16} />
+                      <span className="text-xs">Upload Signature</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <button 
               onClick={() => window.print()}
               className="w-full mt-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 print:hidden"
@@ -384,10 +425,15 @@ export default function App() {
       {/* Official Print Footer (Hidden on Screen) */}
       <div className="hidden print:block pt-8 border-t border-zinc-200 mt-8">
         <p className="text-sm italic leading-relaxed text-zinc-700">
-          Levy is due before the 10th of every month and is payable immediately upon submission, as stipulated by the Dairy Industry Act and its subsidiary regulations.
+          Levy is due before the 10th of every month and is payable immediately upon submission, as stipulated by the Dairy Industry Act (Cap 336) and its subsidiary regulations.
         </p>
         <div className="mt-12 flex justify-between items-end">
-          <div className="space-y-8">
+          <div className="space-y-2">
+            {signature && (
+              <div className="mb-[-10px] ml-4">
+                <img src={signature} alt="Signature" className="h-12 object-contain" />
+              </div>
+            )}
             <div className="w-48 border-b border-black"></div>
             <p className="text-[10px] uppercase font-bold tracking-widest">Authorized Signature</p>
           </div>
