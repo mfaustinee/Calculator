@@ -1,0 +1,133 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+:root {
+  --bg: #0a0a0b;
+  --card: #141417;
+  --border: #27272a;
+  --accent: #3b82f6;
+  --text-dim: #a1a1aa;
+}
+
+body {
+  background-color: var(--bg);
+  color: #ffffff;
+  font-family: var(--font-sans);
+}
+
+.glass-card {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.data-table th {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.data-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.input-field {
+  background: #1c1c21;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: white;
+  font-family: var(--font-mono);
+  width: 100%;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}
+
+@media print {
+  @page {
+    margin: 1cm;
+    size: portrait;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  .no-print, 
+  header button, 
+  .glass-card button,
+  footer,
+  aside,
+  .recharts-responsive-container {
+    display: none !important;
+  }
+
+  .glass-card {
+    border: 1px solid #eee !important;
+    background: white !important;
+    box-shadow: none !important;
+  }
+
+  .data-table th {
+    color: #666 !important;
+    border-bottom: 2px solid #eee !important;
+  }
+
+  .data-table td {
+    color: black !important;
+    border-bottom: 1px solid #eee !important;
+  }
+
+  .text-blue-500, .text-blue-400, .text-red-400 {
+    color: black !important;
+  }
+
+  input {
+    border: none !important;
+    background: transparent !important;
+    color: black !important;
+  }
+
+  .lg\:col-span-2 {
+    grid-column: span 3 / span 3 !important;
+  }
+
+  .glass-card.p-6.bg-blue-500\/5 {
+    background: #f8f8f8 !important;
+    border: 1px solid #eee !important;
+    margin-top: 20px;
+  }
+}
