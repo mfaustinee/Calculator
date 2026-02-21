@@ -1,20 +1,26 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Arrears Master - Kenya Dairy Board
 
-# Run and deploy your AI Studio app
+Professional utility arrears calculator and levy estimate generator for the Kericho office.
 
-This contains everything you need to run your app locally.
+## Deployment Instructions (Option 2)
 
-View your app in AI Studio: https://ai.studio/apps/11d42302-bcb4-4aef-a605-7f5b04636de4
+To host this app publicly without requiring a Google Login:
 
-## Run Locally
+1. **Download** this project as a ZIP file from AI Studio.
+2. **Unzip** the folder on your computer.
+3. Go to **[Vercel.com](https://vercel.com)** and create a free account.
+4. Drag and drop this folder onto the Vercel dashboard to deploy.
+5. Vercel will provide a public URL (e.g., `arrears-master.vercel.app`) that anyone can use.
 
-**Prerequisites:**  Node.js
+## Features
+- **Automated Compounding**: Uses the official Dairy Industry Act penalty logic.
+- **Official Reporting**: Generates "Consumer Safety Levy Estimates" with Kericho office branding.
+- **Offline First**: Works in the field without an active internet connection once loaded.
+- **Privacy**: All data stays on the user's device; no data is sent to a server.
 
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Local Development
+If you want to run this on your own computer:
+1. Install Node.js.
+2. Open a terminal in this folder.
+3. Run `npm install`.
+4. Run `npm run dev`.

@@ -79,7 +79,8 @@ export default function App() {
 
       const penalty = levy * penaltyRate;
       const amount = Math.round(levy + penalty);
-      const total = amount + cf;
+      // CF fee is only added if litres have been entered
+      const total = litres > 0 ? amount + cf : 0;
 
       result.push({
         m,
@@ -113,23 +114,27 @@ export default function App() {
   const chartData = [
     { name: 'Levy', value: totals.levy, color: '#3b82f6' },
     { name: 'Penalty', value: totals.penalty, color: '#ef4444' },
-    { name: 'CF Fees', value: (arrearsCount + 1) * cf, color: '#10b981' },
+    { name: 'CF Fees', value: rows.filter(r => r.litres > 0).length * cf, color: '#10b981' },
   ];
+
+  const validityDate = useMemo(() => {
+    const lastDay = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
+    return lastDay.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  }, []);
 
   return (
     <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-8">
       {/* Official Print Header (Hidden on Screen) */}
       <div className="hidden print:block text-center space-y-1 mb-8 border-b-2 border-black pb-6">
         <h2 className="text-xl font-bold uppercase">Kenya Dairy Board - Kericho</h2>
-        <p className="text-sm">Ardhi House 5th Floor, Wing B</p>
-        <p className="text-sm">Temple Road</p>
+        <p className="text-sm">Ardhi House 5th Floor, Wing B. Temple Road</p>
         <p className="text-sm">Tel: 0734026367</p>
         <div className="pt-4">
           <h1 className="text-2xl font-black underline decoration-2 underline-offset-4">CONSUMER SAFETY LEVY ESTIMATE</h1>
         </div>
         <div className="flex justify-between pt-6 text-xs font-mono">
-          <span>PRICE PER LITRE: ${price.toFixed(2)}</span>
-          <span>CF FEE: ${cf.toFixed(2)}</span>
+          <span>PRICE PER LITRE: Ksh {price.toFixed(2)}</span>
+          <span>CF FEE: Ksh {cf.toFixed(2)}</span>
           <span>DATE: {new Date().toLocaleDateString()}</span>
         </div>
       </div>
@@ -172,7 +177,7 @@ export default function App() {
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Price</label>
             <div className="flex items-center gap-2 glass-card px-3 py-2">
-              <span className="text-zinc-500 text-xs">$</span>
+              <span className="text-zinc-500 text-xs">Ksh</span>
               <input 
                 type="number" 
                 value={price} 
@@ -185,7 +190,7 @@ export default function App() {
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">CF Fee</label>
             <div className="flex items-center gap-2 glass-card px-3 py-2">
-              <span className="text-zinc-500 text-xs">$</span>
+              <span className="text-zinc-500 text-xs">Ksh</span>
               <input 
                 type="number" 
                 value={cf} 
@@ -212,9 +217,9 @@ export default function App() {
                     <th>Litres</th>
                     <th>Levy</th>
                     <th className="print:hidden">Penalty %</th>
-                    <th>Penalty $</th>
-                    <th>Amount</th>
-                    <th>Total</th>
+                    <th>Penalty (Ksh)</th>
+                    <th className="print:hidden">Amount</th>
+                    <th>Total (Ksh)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -246,7 +251,7 @@ export default function App() {
                         <td className="text-red-400/80 print:text-black">
                           {row.penalty.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </td>
-                        <td className="text-zinc-200 font-bold print:text-black">
+                        <td className="text-zinc-200 font-bold print:hidden">
                           {row.amount.toLocaleString()}
                         </td>
                         <td className="font-bold text-zinc-100 bg-white/[0.03] print:bg-transparent print:text-black">
@@ -263,11 +268,15 @@ export default function App() {
                     <td className="print:text-black">{totals.levy.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                     <td className="print:hidden"></td>
                     <td className="text-red-400 print:text-black">{totals.penalty.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                    <td className="print:text-black">{totals.amount.toLocaleString()}</td>
-                    <td className="text-blue-500 text-lg print:text-black">{totals.total.toLocaleString()}</td>
+                    <td className="print:hidden"></td>
+                    <td className="text-blue-500 text-lg print:text-black print:text-sm">{totals.total.toLocaleString()}</td>
                   </tr>
                 </tfoot>
               </table>
+            </div>
+            {/* Validity Date (Hidden on Screen) */}
+            <div className="hidden print:block text-right mt-4 px-4">
+              <p className="text-xs font-bold italic">This estimate is valid till {validityDate}</p>
             </div>
           </div>
 
@@ -356,8 +365,8 @@ export default function App() {
               <span className="text-[10px] font-bold uppercase tracking-widest text-blue-500/50">Final Invoice</span>
             </div>
             <div className="space-y-1">
-              <p className="text-zinc-500 text-xs uppercase tracking-widest print:text-black">Grand Total Due</p>
-              <p className="text-4xl font-bold tracking-tighter text-white print:text-black">
+              <p className="text-zinc-500 text-xs uppercase tracking-widest print:text-black">Grand Total Due (Ksh)</p>
+              <p className="text-4xl font-bold tracking-tighter text-white print:text-black print:text-2xl">
                 {totals.total.toLocaleString()}
               </p>
             </div>
