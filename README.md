@@ -1,4 +1,4 @@
-# Kenya Dairy Board Levy Calculator
+# KDB Levy Calculator
 
 Professional utility arrears calculator and levy estimate generator for the Kericho office.
 
