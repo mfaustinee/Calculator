@@ -60,6 +60,7 @@ export default function App() {
 
   const [signature, setSignature] = useState<string | null>(null);
   const [officerName, setOfficerName] = useState<string>('');
+  const [dboName, setDboName] = useState<string>('');
 
   const handleSignatureUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -146,8 +147,11 @@ export default function App() {
         <h2 className="text-xl font-bold uppercase">Kenya Dairy Board - Kericho</h2>
         <p className="text-sm">Ardhi House (Huduma Centre) 5th Floor, Wing B.</p>
         <p className="text-sm">Tel: 0717997465 / 0734026367</p>
-        <div className="pt-4">
+        <div className="pt-2">
           <h1 className="text-2xl font-black underline decoration-2 underline-offset-4">CONSUMER SAFETY LEVY ESTIMATE</h1>
+          {dboName && (
+            <p className="mt-2 text-lg font-bold">To: {dboName}</p>
+          )}
         </div>
         <div className="flex justify-between pt-6 text-xs font-mono">
           <span>PRICE PER LITRE: Ksh {price.toFixed(2)}</span>
@@ -158,12 +162,28 @@ export default function App() {
 
       {/* Header Section (Hidden on Print) */}
       <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 print:hidden">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <TrendingUp className="text-blue-500" size={28} />
-            <h1 className="text-3xl font-bold tracking-tight">Levy Calculator</h1>
+        <div className="flex flex-col gap-4 w-full lg:w-auto">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <TrendingUp className="text-blue-500" size={28} />
+              <h1 className="text-3xl font-bold tracking-tight">Levy Calculator</h1>
+            </div>
+            <p className="text-zinc-500 text-sm">Official utility compounding & arrears sequencing</p>
           </div>
-          <p className="text-zinc-500 text-sm">Official utility compounding & arrears sequencing</p>
+          
+          <div className="flex flex-col gap-1 max-w-xs">
+            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">To: DBO Name</label>
+            <div className="flex items-center gap-2 glass-card px-3 py-2">
+              <User size={14} className="text-zinc-500" />
+              <input 
+                type="text" 
+                value={dboName} 
+                onChange={(e) => setDboName(e.target.value)}
+                placeholder="Enter DBO Name"
+                className="bg-transparent font-mono text-xs focus:outline-none w-full text-white"
+              />
+            </div>
+          </div>
         </div>
         
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full lg:w-auto">
@@ -291,9 +311,19 @@ export default function App() {
                 </tfoot>
               </table>
             </div>
-            {/* Validity Date (Hidden on Screen) */}
-            <div className="hidden print:block text-right mt-4 px-4">
-              <p className="text-xs font-bold italic">This estimate is valid till {validityDate}</p>
+            {/* Validity Date & Total (Hidden on Screen) */}
+            <div className="hidden print:block mt-6 px-4">
+              <div className="space-y-4">
+                <div className="text-right">
+                  <p className="text-xs font-bold italic">This estimate is valid till {validityDate}</p>
+                </div>
+                <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-lg w-fit">
+                  <p className="text-zinc-500 text-[10px] uppercase tracking-widest text-black mb-1">Grand Total Due (Ksh)</p>
+                  <p className="text-2xl font-bold tracking-tighter text-black">
+                    {totals.total.toLocaleString()}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -374,8 +404,8 @@ export default function App() {
             </div>
           </div>
 
-          <div className="glass-card p-4 bg-blue-500/5 border-blue-500/20 print:bg-zinc-50 print:border-zinc-200 print:mt-0">
-            <div className="flex justify-between items-start mb-2 print:hidden">
+          <div className="glass-card p-4 bg-blue-500/5 border-blue-500/20 print:hidden">
+            <div className="flex justify-between items-start mb-2">
               <div className="p-1.5 bg-blue-500/10 rounded-lg text-blue-500">
                 <FileText size={18} />
               </div>

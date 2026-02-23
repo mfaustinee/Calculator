@@ -130,7 +130,7 @@ body {
     grid-column: span 3 / span 3 !important;
   }
 
-  .glass-card.p-6.bg-blue-500\/5 {
+  .glass-card.p-4.bg-blue-500\/5 {
     background: #f8f8f8 !important;
     border: 1px solid #eee !important;
     margin-top: 20px;
