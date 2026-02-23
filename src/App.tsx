@@ -147,12 +147,12 @@ export default function App() {
         <h2 className="text-xl font-bold uppercase">Kenya Dairy Board - Kericho</h2>
         <p className="text-sm">Ardhi House (Huduma Centre) 5th Floor, Wing B.</p>
         <p className="text-sm">Tel: 0717997465 / 0734026367</p>
-        <div className="pt-2">
+        <div className="pt-2 text-center">
           <h1 className="text-2xl font-black underline decoration-2 underline-offset-4">CONSUMER SAFETY LEVY ESTIMATE</h1>
-          {dboName && (
-            <p className="mt-2 text-lg font-bold">To: {dboName}</p>
-          )}
         </div>
+        {dboName && (
+          <p className="mt-4 text-xs font-bold text-left">To: {dboName}</p>
+        )}
         <div className="flex justify-between pt-6 text-xs font-mono">
           <span>PRICE PER LITRE: Ksh {price.toFixed(2)}</span>
           <span>CF FEE: Ksh {cf.toFixed(2)}</span>
@@ -301,7 +301,7 @@ export default function App() {
                 <tfoot>
                   <tr className="bg-white/[0.05] font-bold print:bg-zinc-100">
                     <td colSpan={2} className="text-xs uppercase tracking-widest text-zinc-500 print:text-black">Totals</td>
-                    <td className="text-blue-400 print:text-black">{totals.litres.toLocaleString()}</td>
+                    <td className="text-blue-400 print:hidden">{totals.litres.toLocaleString()}</td>
                     <td className="print:text-black">{totals.levy.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                     <td className="print:hidden"></td>
                     <td className="text-red-400 print:text-black">{totals.penalty.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
@@ -313,7 +313,7 @@ export default function App() {
             </div>
             {/* Validity Date & Total (Hidden on Screen) */}
             <div className="hidden print:block mt-6 px-4">
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="text-right">
                   <p className="text-xs font-bold italic">This estimate is valid till {validityDate}</p>
                 </div>
@@ -323,6 +323,9 @@ export default function App() {
                     {totals.total.toLocaleString()}
                   </p>
                 </div>
+                <p className="text-sm italic leading-relaxed text-zinc-700 max-w-2xl">
+                  Levy is due before the 10th of every month and is payable immediately upon submission, as stipulated by the Dairy Industry Act (Cap 336) and its subsidiary regulations.
+                </p>
               </div>
             </div>
           </div>
@@ -472,10 +475,7 @@ export default function App() {
 
       {/* Official Print Footer (Hidden on Screen) */}
       <div className="hidden print:block pt-8 border-t border-zinc-200 mt-8">
-        <p className="text-sm italic leading-relaxed text-zinc-700">
-          Levy is due before the 10th of every month and is payable immediately upon submission, as stipulated by the Dairy Industry Act (Cap 336) and its subsidiary regulations.
-        </p>
-        <div className="mt-12 flex justify-between items-end">
+        <div className="mt-4 flex justify-between items-end">
           <div className="space-y-1">
             {signature && (
               <div className="mb-2 ml-4">
