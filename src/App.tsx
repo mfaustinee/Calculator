@@ -151,7 +151,7 @@ export default function App() {
           <h1 className="text-2xl font-black underline decoration-2 underline-offset-4">CONSUMER SAFETY LEVY ESTIMATE</h1>
         </div>
         {dboName && (
-          <p className="mt-4 text-xs font-bold text-left">To: {dboName}</p>
+          <p className="mt-4 text-xs font-bold text-left">To:&nbsp;&nbsp;&nbsp;&nbsp;{dboName}</p>
         )}
         <div className="flex justify-between pt-6 text-xs font-mono">
           <span>PRICE PER LITRE: Ksh {price.toFixed(2)}</span>
@@ -302,6 +302,7 @@ export default function App() {
                   <tr className="bg-white/[0.05] font-bold print:bg-zinc-100">
                     <td colSpan={2} className="text-xs uppercase tracking-widest text-zinc-500 print:text-black">Totals</td>
                     <td className="text-blue-400 print:hidden">{totals.litres.toLocaleString()}</td>
+                    <td className="hidden print:table-cell"></td>
                     <td className="print:text-black">{totals.levy.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                     <td className="print:hidden"></td>
                     <td className="text-red-400 print:text-black">{totals.penalty.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
@@ -326,6 +327,17 @@ export default function App() {
                 <p className="text-sm italic leading-relaxed text-zinc-700 max-w-2xl">
                   Levy is due before the 10th of every month and is payable immediately upon submission, as stipulated by the Dairy Industry Act (Cap 336) and its subsidiary regulations.
                 </p>
+                <div className="pt-8 space-y-1">
+                  {signature && (
+                    <div className="mb-2 ml-4">
+                      <img src={signature} alt="Signature" className="h-12 object-contain" />
+                    </div>
+                  )}
+                  {officerName && (
+                    <p className="text-sm font-bold uppercase border-b border-black pb-1 mb-1 w-fit min-w-[200px]">{officerName}</p>
+                  )}
+                  <p className="text-[10px] uppercase font-bold tracking-widest">Authorized Signature</p>
+                </div>
               </div>
             </div>
           </div>
@@ -475,21 +487,6 @@ export default function App() {
 
       {/* Official Print Footer (Hidden on Screen) */}
       <div className="hidden print:block pt-8 border-t border-zinc-200 mt-8">
-        <div className="mt-4 flex justify-between items-end">
-          <div className="space-y-1">
-            {signature && (
-              <div className="mb-2 ml-4">
-                <img src={signature} alt="Signature" className="h-12 object-contain" />
-              </div>
-            )}
-            {officerName && (
-              <p className="text-sm font-bold uppercase border-b border-black pb-1 mb-1">{officerName}</p>
-            )}
-            <p className="text-[10px] uppercase font-bold tracking-widest">Authorized Signature</p>
-          </div>
-          <div className="text-right">
-          </div>
-        </div>
       </div>
     </div>
   );
