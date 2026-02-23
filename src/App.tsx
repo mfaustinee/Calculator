@@ -81,7 +81,7 @@ export default function App() {
     for (let m = 0; m <= arrearsCount; m++) {
       const monthLabel = getMonthLabel(baseDate, m);
       const litres = litresMap[m] || 0;
-      const levy = litres * price;
+      const levy = Math.ceil(litres * price);
       
       let penaltyRate = 0;
       let compoundingFactor = 0;
@@ -95,8 +95,8 @@ export default function App() {
         penaltyRate = (1.25 * compoundingFactor) - 1;
       }
 
-      const penalty = levy * penaltyRate;
-      const amount = Math.round(levy + penalty);
+      const penalty = Math.ceil(levy * penaltyRate);
+      const amount = levy + penalty;
       // CF fee is only added if litres have been entered
       const total = litres > 0 ? amount + cf : 0;
 
@@ -280,13 +280,13 @@ export default function App() {
                           />
                         </td>
                         <td className="text-zinc-400 print:text-black">
-                          {row.levy.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          {row.levy.toLocaleString()}
                         </td>
                         <td className="text-zinc-500 text-[10px] print:hidden">
                           {(row.penaltyRate * 100).toFixed(1) + '%'}
                         </td>
                         <td className="text-red-400/80 print:text-black">
-                          {row.penalty.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          {row.penalty.toLocaleString()}
                         </td>
                         <td className="text-zinc-200 font-bold print:hidden">
                           {row.amount.toLocaleString()}
@@ -303,9 +303,9 @@ export default function App() {
                     <td colSpan={2} className="text-xs uppercase tracking-widest text-zinc-500 print:text-black">Totals</td>
                     <td className="text-blue-400 print:hidden">{totals.litres.toLocaleString()}</td>
                     <td className="hidden print:table-cell"></td>
-                    <td className="print:text-black">{totals.levy.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                    <td className="print:text-black">{totals.levy.toLocaleString()}</td>
                     <td className="print:hidden"></td>
-                    <td className="text-red-400 print:text-black">{totals.penalty.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                    <td className="text-red-400 print:text-black">{totals.penalty.toLocaleString()}</td>
                     <td className="print:hidden"></td>
                     <td className="text-blue-500 text-lg print:text-black print:text-sm">{totals.total.toLocaleString()}</td>
                   </tr>
