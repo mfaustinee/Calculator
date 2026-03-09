@@ -46,17 +46,12 @@ const getMonthLabel = (baseDate: Date, arrearsIndex: number) => {
 
 export default function App() {
   const [baseMonth, setBaseMonth] = useState('2026-01');
-  const [arrearsCount, setArrearsCount] = useState(4);
+  const [arrearsCount, setArrearsCount] = useState(1);
   const [price, setPrice] = useState(DEFAULT_PRICE);
   const [cf, setCf] = useState(DEFAULT_CF);
   
   // Store litres in a map keyed by arrears index to persist values when count changes
-  const [litresMap, setLitresMap] = useState<Record<number, number>>({
-    1: 6293,
-    2: 6379,
-    3: 7094,
-    4: 10422
-  });
+  const [litresMap, setLitresMap] = useState<Record<number, number>>({});
 
   const [signature, setSignature] = useState<string | null>(null);
   const [officerName, setOfficerName] = useState<string>('');
@@ -155,7 +150,6 @@ export default function App() {
         )}
         <div className="flex justify-between pt-6 text-xs font-mono">
           <span>PRICE PER LITRE: Ksh {price.toFixed(2)}</span>
-          <span>CF FEE: Ksh {cf.toFixed(2)}</span>
           <span>DATE: {new Date().toLocaleDateString()}</span>
         </div>
       </div>
@@ -166,7 +160,7 @@ export default function App() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <TrendingUp className="text-blue-500" size={28} />
-              <h1 className="text-3xl font-bold tracking-tight">Levy Calculator</h1>
+              <h1 className="text-3xl font-bold tracking-tight">KDB Levy Calculator</h1>
             </div>
             <p className="text-zinc-500 text-sm">Official utility compounding & arrears sequencing</p>
           </div>
