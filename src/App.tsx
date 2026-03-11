@@ -260,7 +260,7 @@ export default function App() {
                         key={row.m}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="hover:bg-white/[0.02] transition-colors"
+                        className={cn("hover:bg-white/[0.02] transition-colors", row.litres === 0 && "print:hidden")}
                       >
                         <td className="font-bold text-zinc-400 print:text-black">{row.month}</td>
                         <td className="text-zinc-500 print:text-black">{row.m}</td>
