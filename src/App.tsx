@@ -57,6 +57,12 @@ export default function App() {
   const [officerName, setOfficerName] = useState<string>('');
   const [dboName, setDboName] = useState<string>('');
 
+  useEffect(() => {
+    const date = new Date().toISOString().split('T')[0];
+    const name = dboName ? `_${dboName}` : '';
+    document.title = `KDB_Estimate${name}_${date}`;
+  }, [dboName]);
+
   const handleSignatureUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
