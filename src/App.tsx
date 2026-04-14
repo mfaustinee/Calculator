@@ -44,11 +44,22 @@ const getMonthLabel = (baseDate: Date, arrearsIndex: number) => {
   return d.toLocaleString('default', { month: 'short' }) + '-' + d.getFullYear().toString().slice(-2);
 };
 
+const getBandedCF = (amount: number) => {
+  if (amount <= 0) return 0;
+  if (amount < 199) return 5;
+  if (amount < 300) return 10;
+  if (amount < 500) return 15;
+  if (amount < 700) return 20;
+  if (amount < 1000) return 25;
+  return 50;
+};
+
 export default function App() {
   const [baseMonth, setBaseMonth] = useState('2026-01');
   const [arrearsCount, setArrearsCount] = useState(1);
   const [price, setPrice] = useState(DEFAULT_PRICE);
-  const [cf, setCf] = useState(DEFAULT_CF);
+  const [pricingMode, setPricingMode] = useState<'general' | 'individual'>('general');
+  const [pricesMap, setPricesMap] = useState<Record<number, number>>({});
   
   // Store litres in a map keyed by arrears index to persist values when count changes
   const [litresMap, setLitresMap] = useState<Record<number, number>>({});
@@ -82,7 +93,8 @@ export default function App() {
     for (let m = 0; m <= arrearsCount; m++) {
       const monthLabel = getMonthLabel(baseDate, m);
       const litres = litresMap[m] || 0;
-      const levy = Math.ceil(litres * price);
+      const currentPrice = pricingMode === 'individual' ? (pricesMap[m] ?? price) : price;
+      const levy = Math.ceil(litres * currentPrice);
       
       let penaltyRate = 0;
       let compoundingFactor = 0;
@@ -98,42 +110,50 @@ export default function App() {
 
       const penalty = Math.ceil(levy * penaltyRate);
       const amount = levy + penalty;
-      // CF fee is only added if litres have been entered
-      const total = litres > 0 ? amount + cf : 0;
+      // CF fee is banded based on the amount (levy + penalty)
+      const rowCf = litres > 0 ? getBandedCF(amount) : 0;
+      const total = litres > 0 ? amount + rowCf : 0;
 
       result.push({
         m,
         month: monthLabel,
         litres,
+        price: currentPrice,
         levy,
         penalty,
         penaltyRate,
         compoundingFactor,
         amount,
+        cf: rowCf,
         total
       });
     }
     return result;
-  }, [baseDate, arrearsCount, price, cf, litresMap]);
+  }, [baseDate, arrearsCount, price, pricingMode, pricesMap, litresMap]);
 
   const totals = useMemo(() => {
     return rows.reduce((acc, row) => ({
       levy: acc.levy + row.levy,
       penalty: acc.penalty + row.penalty,
       amount: acc.amount + row.amount,
+      cf: acc.cf + row.cf,
       total: acc.total + row.total,
       litres: acc.litres + row.litres
-    }), { levy: 0, penalty: 0, amount: 0, total: 0, litres: 0 });
+    }), { levy: 0, penalty: 0, amount: 0, cf: 0, total: 0, litres: 0 });
   }, [rows]);
 
   const updateLitres = (m: number, val: number) => {
     setLitresMap(prev => ({ ...prev, [m]: val }));
   };
 
+  const updatePrice = (m: number, val: number) => {
+    setPricesMap(prev => ({ ...prev, [m]: val }));
+  };
+
   const chartData = [
     { name: 'Levy', value: totals.levy, color: '#3b82f6' },
     { name: 'Penalty', value: totals.penalty, color: '#ef4444' },
-    { name: 'CF Fees', value: rows.filter(r => r.litres > 0).length * cf, color: '#10b981' },
+    { name: 'CF Fees', value: totals.cf, color: '#10b981' },
   ];
 
   const validityDate = useMemo(() => {
@@ -155,7 +175,7 @@ export default function App() {
           <p className="mt-4 text-xs font-bold text-left">To:&nbsp;&nbsp;&nbsp;&nbsp;{dboName}</p>
         )}
         <div className="flex justify-between pt-6 text-xs font-mono">
-          <span>PRICE PER LITRE: Ksh {price.toFixed(2)}</span>
+          <span>PRICE PER LITRE: Ksh {pricingMode === 'general' ? price.toFixed(2) : 'Variable'}</span>
           <span>DATE: {new Date().toLocaleDateString()}</span>
         </div>
       </div>
@@ -212,7 +232,32 @@ export default function App() {
             </div>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Price</label>
+            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Pricing Mode</label>
+            <div className="flex items-center gap-1 glass-card p-1">
+              <button 
+                onClick={() => setPricingMode('general')}
+                className={cn(
+                  "flex-1 py-1.5 px-3 rounded-lg text-[10px] font-bold transition-all",
+                  pricingMode === 'general' ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20" : "text-zinc-500 hover:text-zinc-300"
+                )}
+              >
+                GENERAL
+              </button>
+              <button 
+                onClick={() => setPricingMode('individual')}
+                className={cn(
+                  "flex-1 py-1.5 px-3 rounded-lg text-[10px] font-bold transition-all",
+                  pricingMode === 'individual' ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20" : "text-zinc-500 hover:text-zinc-300"
+                )}
+              >
+                INDIVIDUAL
+              </button>
+            </div>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">
+              {pricingMode === 'general' ? 'General Price' : 'Default Price'}
+            </label>
             <div className="flex items-center gap-2 glass-card px-3 py-2">
               <span className="text-zinc-500 text-xs">Ksh</span>
               <input 
@@ -221,18 +266,6 @@ export default function App() {
                 onChange={(e) => setPrice(parseFloat(e.target.value) || 0)}
                 className="bg-transparent font-mono text-xs focus:outline-none w-full"
                 step="0.01"
-              />
-            </div>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">CF Fee</label>
-            <div className="flex items-center gap-2 glass-card px-3 py-2">
-              <span className="text-zinc-500 text-xs">Ksh</span>
-              <input 
-                type="number" 
-                value={cf} 
-                onChange={(e) => setCf(parseFloat(e.target.value) || 0)}
-                className="bg-transparent font-mono text-xs focus:outline-none w-full"
               />
             </div>
           </div>
@@ -252,10 +285,12 @@ export default function App() {
                     <th>Month</th>
                     <th>Arrears (m)</th>
                     <th>Litres</th>
+                    {pricingMode === 'individual' && <th>Price</th>}
                     <th>Levy</th>
                     <th className="print:hidden">Penalty %</th>
                     <th>Penalty (Ksh)</th>
                     <th className="print:hidden">Amount</th>
+                    <th>CF Fee</th>
                     <th>Total (Ksh)</th>
                   </tr>
                 </thead>
@@ -276,9 +311,21 @@ export default function App() {
                             value={row.litres || ''} 
                             onChange={(e) => updateLitres(row.m, parseFloat(e.target.value) || 0)}
                             placeholder="0"
-                            className="bg-transparent w-24 focus:outline-none font-bold text-blue-400 print:text-black"
+                            className="bg-transparent w-20 focus:outline-none font-bold text-blue-400 print:text-black"
                           />
                         </td>
+                        {pricingMode === 'individual' && (
+                          <td>
+                            <input 
+                              type="number" 
+                              value={row.price || ''} 
+                              onChange={(e) => updatePrice(row.m, parseFloat(e.target.value) || 0)}
+                              placeholder={price.toString()}
+                              className="bg-transparent w-16 focus:outline-none font-mono text-xs text-zinc-400 print:text-black"
+                              step="0.01"
+                            />
+                          </td>
+                        )}
                         <td className="text-zinc-400 print:text-black">
                           {row.levy.toLocaleString()}
                         </td>
@@ -290,6 +337,9 @@ export default function App() {
                         </td>
                         <td className="text-zinc-200 font-bold print:hidden">
                           {row.amount.toLocaleString()}
+                        </td>
+                        <td className="text-emerald-400/80 print:text-black">
+                          {row.cf.toLocaleString()}
                         </td>
                         <td className="font-bold text-zinc-100 bg-white/[0.03] print:bg-transparent print:text-black">
                           {row.total.toLocaleString()}
@@ -303,10 +353,12 @@ export default function App() {
                     <td colSpan={2} className="text-xs uppercase tracking-widest text-zinc-500 print:text-black">Totals</td>
                     <td className="text-blue-400 print:hidden">{totals.litres.toLocaleString()}</td>
                     <td className="hidden print:table-cell"></td>
+                    {pricingMode === 'individual' && <td></td>}
                     <td className="print:text-black">{totals.levy.toLocaleString()}</td>
                     <td className="print:hidden"></td>
                     <td className="text-red-400 print:text-black">{totals.penalty.toLocaleString()}</td>
                     <td className="print:hidden"></td>
+                    <td className="text-emerald-400 print:text-black">{totals.cf.toLocaleString()}</td>
                     <td className="text-blue-500 text-lg print:text-black print:text-sm">{totals.total.toLocaleString()}</td>
                   </tr>
                 </tfoot>
