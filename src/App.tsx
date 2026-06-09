@@ -13,7 +13,9 @@ import {
   Layers,
   Upload,
   Image as ImageIcon,
-  User
+  User,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -55,6 +57,14 @@ const getBandedCF = (amount: number) => {
 };
 
 export default function App() {
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('theme');
+      return (saved === 'light' || saved === 'dark') ? saved : 'dark';
+    }
+    return 'dark';
+  });
+
   const [baseMonth, setBaseMonth] = useState('2026-01');
   const [arrearsCount, setArrearsCount] = useState(1);
   const [price, setPrice] = useState(DEFAULT_PRICE);
@@ -67,6 +77,16 @@ export default function App() {
   const [signature, setSignature] = useState<string | null>(null);
   const [officerName, setOfficerName] = useState<string>('');
   const [dboName, setDboName] = useState<string>('');
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (theme === 'light') {
+      root.classList.add('light');
+    } else {
+      root.classList.remove('light');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
 
   useEffect(() => {
     const date = new Date().toISOString().split('T')[0];
@@ -183,12 +203,27 @@ export default function App() {
       {/* Header Section (Hidden on Print) */}
       <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 print:hidden">
         <div className="flex flex-col gap-4 w-full lg:w-auto">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <TrendingUp className="text-blue-500" size={28} />
-              <h1 className="text-3xl font-bold tracking-tight">KDB Levy Calculator</h1>
+          <div className="flex items-center justify-between gap-6 w-full lg:min-w-[400px]">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <TrendingUp className="text-blue-500" size={28} />
+                <h1 className="text-3xl font-bold tracking-tight text-[var(--text-main)] transition-colors">KDB Levy Calculator</h1>
+              </div>
+              <p className="text-zinc-500 text-sm">Official utility compounding & arrears sequencing</p>
             </div>
-            <p className="text-zinc-500 text-sm">Official utility compounding & arrears sequencing</p>
+            
+            <button
+              onClick={() => setTheme(curr => curr === 'dark' ? 'light' : 'dark')}
+              className="p-2.5 rounded-xl glass-card text-[var(--text-main)] hover:bg-[var(--accent)]/10 cursor-pointer transition-all duration-200 border border-[var(--border)] active:scale-95"
+              aria-label="Toggle Theme"
+              title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+            >
+              {theme === 'dark' ? (
+                <Sun className="text-amber-400" size={18} />
+              ) : (
+                <Moon className="text-blue-600" size={18} />
+              )}
+            </button>
           </div>
           
           <div className="flex flex-col gap-1 max-w-xs">
@@ -200,7 +235,7 @@ export default function App() {
                 value={dboName} 
                 onChange={(e) => setDboName(e.target.value)}
                 placeholder="Enter DBO Name"
-                className="bg-transparent font-mono text-xs focus:outline-none w-full text-white"
+                className="bg-transparent font-mono text-xs focus:outline-none w-full text-[var(--text-main)] placeholder-zinc-500/50"
               />
             </div>
           </div>
@@ -238,7 +273,9 @@ export default function App() {
                 onClick={() => setPricingMode('general')}
                 className={cn(
                   "flex-1 py-1.5 px-3 rounded-lg text-[10px] font-bold transition-all",
-                  pricingMode === 'general' ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20" : "text-zinc-500 hover:text-zinc-300"
+                  pricingMode === 'general' 
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20" 
+                    : "text-zinc-500 dark:text-zinc-400 hover:text-[var(--text-main)]"
                 )}
               >
                 GENERAL
@@ -247,7 +284,9 @@ export default function App() {
                 onClick={() => setPricingMode('individual')}
                 className={cn(
                   "flex-1 py-1.5 px-3 rounded-lg text-[10px] font-bold transition-all",
-                  pricingMode === 'individual' ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20" : "text-zinc-500 hover:text-zinc-300"
+                  pricingMode === 'individual' 
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20" 
+                    : "text-zinc-500 dark:text-zinc-400 hover:text-[var(--text-main)]"
                 )}
               >
                 INDIVIDUAL
@@ -301,17 +340,17 @@ export default function App() {
                         key={row.m}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className={cn("hover:bg-white/[0.02] transition-colors", row.litres === 0 && "print:hidden")}
+                        className={cn("hover:bg-[var(--accent)]/[0.04] transition-colors duration-200", row.litres === 0 && "print:hidden")}
                       >
-                        <td className="font-bold text-zinc-400 print:text-black">{row.month}</td>
-                        <td className="text-zinc-500 print:text-black">{row.m}</td>
+                        <td className="font-bold text-[var(--text-main)] print:text-black">{row.month}</td>
+                        <td className="text-zinc-500 dark:text-zinc-400 print:text-black">{row.m}</td>
                         <td>
                           <input 
                             type="number" 
                             value={row.litres || ''} 
                             onChange={(e) => updateLitres(row.m, parseFloat(e.target.value) || 0)}
                             placeholder="0"
-                            className="bg-transparent w-20 focus:outline-none font-bold text-blue-400 print:text-black"
+                            className="bg-transparent w-20 focus:outline-none font-bold text-blue-500 dark:text-blue-400 print:text-black placeholder-zinc-500/40"
                           />
                         </td>
                         {pricingMode === 'individual' && (
@@ -321,27 +360,27 @@ export default function App() {
                               value={row.price || ''} 
                               onChange={(e) => updatePrice(row.m, parseFloat(e.target.value) || 0)}
                               placeholder={price.toString()}
-                              className="bg-transparent w-16 focus:outline-none font-mono text-xs text-zinc-400 print:text-black"
+                              className="bg-transparent w-16 focus:outline-none font-mono text-xs text-zinc-500 dark:text-zinc-400 print:text-black"
                               step="0.01"
                             />
                           </td>
                         )}
-                        <td className="text-zinc-400 print:text-black">
+                        <td className="text-[var(--text-main)]/90 print:text-black">
                           {row.levy.toLocaleString()}
                         </td>
-                        <td className="text-zinc-500 text-[10px] print:hidden">
+                        <td className="text-zinc-500 dark:text-zinc-400 text-[10px] print:hidden">
                           {(row.penaltyRate * 100).toFixed(1) + '%'}
                         </td>
-                        <td className="text-red-400/80 print:text-black">
+                        <td className="text-red-500 dark:text-red-400/80 print:text-black">
                           {row.penalty.toLocaleString()}
                         </td>
-                        <td className="text-zinc-200 font-bold print:hidden">
+                        <td className="text-[var(--text-main)]/80 font-bold print:hidden">
                           {row.amount.toLocaleString()}
                         </td>
-                        <td className="text-emerald-400/80 print:text-black">
+                        <td className="text-emerald-600 dark:text-emerald-400/80 print:text-black">
                           {row.cf.toLocaleString()}
                         </td>
-                        <td className="font-bold text-zinc-100 bg-white/[0.03] print:bg-transparent print:text-black">
+                        <td className="font-bold text-[var(--text-main)] bg-[var(--accent)]/[0.04] print:bg-transparent print:text-black">
                           {row.total.toLocaleString()}
                         </td>
                       </motion.tr>
@@ -349,17 +388,17 @@ export default function App() {
                   </AnimatePresence>
                 </tbody>
                 <tfoot>
-                  <tr className="bg-white/[0.05] font-bold print:bg-zinc-100">
-                    <td colSpan={2} className="text-xs uppercase tracking-widest text-zinc-500 print:text-black">Totals</td>
-                    <td className="text-blue-400 print:hidden">{totals.litres.toLocaleString()}</td>
+                  <tr className="bg-[var(--accent)]/[0.03] dark:bg-white/[0.05] font-bold print:bg-zinc-100">
+                    <td colSpan={2} className="text-xs uppercase tracking-widest text-[var(--text-dim)] print:text-black">Totals</td>
+                    <td className="text-blue-500 dark:text-blue-400 print:hidden">{totals.litres.toLocaleString()}</td>
                     <td className="hidden print:table-cell"></td>
                     {pricingMode === 'individual' && <td></td>}
                     <td className="print:text-black">{totals.levy.toLocaleString()}</td>
                     <td className="print:hidden"></td>
-                    <td className="text-red-400 print:text-black">{totals.penalty.toLocaleString()}</td>
+                    <td className="text-red-500 dark:text-red-400 print:text-black">{totals.penalty.toLocaleString()}</td>
                     <td className="print:hidden"></td>
-                    <td className="text-emerald-400 print:text-black">{totals.cf.toLocaleString()}</td>
-                    <td className="text-blue-500 text-lg print:text-black print:text-sm">{totals.total.toLocaleString()}</td>
+                    <td className="text-emerald-500 dark:text-emerald-400 print:text-black">{totals.cf.toLocaleString()}</td>
+                    <td className="text-blue-600 dark:text-blue-400 text-lg print:text-black print:text-sm">{totals.total.toLocaleString()}</td>
                   </tr>
                 </tfoot>
               </table>
@@ -397,35 +436,35 @@ export default function App() {
           {/* Logic Breakdown (Hidden on Print) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:hidden">
             <div className="glass-card p-6 space-y-4">
-              <div className="flex items-center gap-2 text-zinc-400">
+              <div className="flex items-center gap-2 text-[var(--text-dim)]">
                 <Calculator size={18} />
                 <h3 className="text-sm font-bold uppercase tracking-widest">Compounding Logic</h3>
               </div>
               <div className="space-y-3">
                 <div className="flex justify-between text-xs">
-                  <span className="text-zinc-500">Base Penalty (m=1)</span>
-                  <span className="font-mono text-blue-400">25.0%</span>
+                  <span className="text-zinc-500 dark:text-zinc-400">Base Penalty (m=1)</span>
+                  <span className="font-mono text-blue-600 dark:text-blue-400">25.0%</span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-zinc-500">Compounding Rate</span>
-                  <span className="font-mono text-blue-400">12.0% Monthly</span>
+                  <span className="text-zinc-500 dark:text-zinc-400">Compounding Rate</span>
+                  <span className="font-mono text-blue-600 dark:text-blue-400">12.0% Monthly</span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-zinc-500">Formula (m &gt; 1)</span>
-                  <span className="font-mono text-zinc-300">(1.25 * 1.12^(m-1)) - 1</span>
+                  <span className="text-zinc-500 dark:text-zinc-400">Formula (m &gt; 1)</span>
+                  <span className="font-mono text-zinc-700 dark:text-zinc-300">(1.25 * 1.12^(m-1)) - 1</span>
                 </div>
               </div>
             </div>
 
             <div className="glass-card p-6 space-y-4">
-              <div className="flex items-center gap-2 text-zinc-400">
+              <div className="flex items-center gap-2 text-[var(--text-dim)]">
                 <AlertCircle size={18} />
                 <h3 className="text-sm font-bold uppercase tracking-widest">Sequence Pattern</h3>
               </div>
-              <div className="text-[11px] text-zinc-500 leading-relaxed">
-                <p>• <span className="text-zinc-300">m=0:</span> Current month, no penalty.</p>
-                <p>• <span className="text-zinc-300">m=1:</span> Current month, 25% penalty.</p>
-                <p>• <span className="text-zinc-300">m=2+:</span> Previous months, compounded penalty.</p>
+              <div className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                <p>• <span className="text-zinc-700 dark:text-zinc-300">m=0:</span> Current month, no penalty.</p>
+                <p>• <span className="text-zinc-700 dark:text-zinc-300">m=1:</span> Current month, 25% penalty.</p>
+                <p>• <span className="text-zinc-700 dark:text-zinc-300">m=2+:</span> Previous months, compounded penalty.</p>
               </div>
             </div>
           </div>
@@ -452,8 +491,13 @@ export default function App() {
                     ))}
                   </Pie>
                   <Tooltip 
-                    contentStyle={{ backgroundColor: '#141417', border: '1px solid #27272a', borderRadius: '8px' }}
-                    itemStyle={{ color: '#fff' }}
+                    contentStyle={{ 
+                      backgroundColor: theme === 'dark' ? '#141417' : '#ffffff', 
+                      border: theme === 'dark' ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0', 
+                      borderRadius: '8px',
+                      color: theme === 'dark' ? '#f4f4f5' : '#0f172a'
+                    }}
+                    itemStyle={{ color: theme === 'dark' ? '#f4f4f5' : '#0f172a' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -463,7 +507,7 @@ export default function App() {
                 <div key={item.name} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
-                    <span className="text-xs text-zinc-400">{item.name}</span>
+                    <span className="text-xs text-[var(--text-dim)]">{item.name}</span>
                   </div>
                   <span className="text-xs font-mono">{item.value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                 </div>
@@ -480,7 +524,7 @@ export default function App() {
             </div>
             <div className="space-y-0.5">
               <p className="text-zinc-500 text-[10px] uppercase tracking-widest print:text-black">Grand Total Due (Ksh)</p>
-              <p className="text-3xl font-bold tracking-tighter text-white print:text-black print:text-xl">
+              <p className="text-3xl font-bold tracking-tighter text-[var(--text-main)] print:text-black print:text-xl">
                 {totals.total.toLocaleString()}
               </p>
             </div>
@@ -495,7 +539,7 @@ export default function App() {
                     value={officerName} 
                     onChange={(e) => setOfficerName(e.target.value)}
                     placeholder="Enter Officer Name"
-                    className="bg-transparent font-mono text-xs focus:outline-none w-full text-white"
+                    className="bg-transparent font-mono text-xs focus:outline-none w-full text-[var(--text-main)] placeholder-zinc-500/50"
                   />
                 </div>
               </div>
@@ -509,7 +553,7 @@ export default function App() {
                   onChange={handleSignatureUpload}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                 />
-                <div className="flex items-center justify-center gap-2 py-3 border-2 border-dashed border-zinc-800 rounded-xl group-hover:border-blue-500/50 transition-colors bg-white/[0.02]">
+                <div className="flex items-center justify-center gap-2 py-3 border-2 border-dashed border-[var(--border)] rounded-xl group-hover:border-blue-500/50 transition-all duration-200 bg-[var(--input-bg)]/40">
                   {signature ? (
                     <div className="flex items-center gap-2">
                       <ImageIcon size={16} className="text-emerald-500" />
