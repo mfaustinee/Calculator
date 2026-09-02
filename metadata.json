@@ -1,5 +1,6 @@
 {
   "name": "KDB Levy Calculator",
-  "description": "Professional utility arrears calculator and levy estimate generator for the Kco office.",
-  "requestFramePermissions": []
+  "description": "",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

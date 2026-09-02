@@ -66,13 +66,13 @@ export default function App() {
   });
 
   const [baseMonth, setBaseMonth] = useState('2026-01');
-  const [arrearsCount, setArrearsCount] = useState(1);
-  const [price, setPrice] = useState(DEFAULT_PRICE);
+  const [arrearsCount, setArrearsCount] = useState<number | ''>(1);
+  const [price, setPrice] = useState<number | ''>(DEFAULT_PRICE);
   const [pricingMode, setPricingMode] = useState<'general' | 'individual'>('general');
-  const [pricesMap, setPricesMap] = useState<Record<number, number>>({});
+  const [pricesMap, setPricesMap] = useState<Record<number, number | ''>>({});
   
   // Store litres in a map keyed by arrears index to persist values when count changes
-  const [litresMap, setLitresMap] = useState<Record<number, number>>({});
+  const [litresMap, setLitresMap] = useState<Record<number, number | ''>>({});
 
   const [signature, setSignature] = useState<string | null>(null);
   const [officerName, setOfficerName] = useState<string>('');
@@ -109,11 +109,20 @@ export default function App() {
 
   const rows = useMemo(() => {
     const result = [];
-    // We go from 0 to arrearsCount
-    for (let m = 0; m <= arrearsCount; m++) {
+    const count = typeof arrearsCount === 'number' && !isNaN(arrearsCount) ? Math.max(0, arrearsCount) : 0;
+    const defaultPriceVal = typeof price === 'number' && !isNaN(price) ? price : 0;
+
+    // We go from 0 to count
+    for (let m = 0; m <= count; m++) {
       const monthLabel = getMonthLabel(baseDate, m);
-      const litres = litresMap[m] || 0;
-      const currentPrice = pricingMode === 'individual' ? (pricesMap[m] ?? price) : price;
+      const rawLitres = litresMap[m];
+      const litres = typeof rawLitres === 'number' && !isNaN(rawLitres) ? rawLitres : 0;
+
+      const rawIndivPrice = pricesMap[m];
+      const currentPrice = pricingMode === 'individual' 
+        ? (typeof rawIndivPrice === 'number' && !isNaN(rawIndivPrice) ? rawIndivPrice : defaultPriceVal) 
+        : defaultPriceVal;
+      
       const levy = Math.ceil(litres * currentPrice);
       
       let penaltyRate = 0;
@@ -139,6 +148,7 @@ export default function App() {
         month: monthLabel,
         litres,
         price: currentPrice,
+        priceInput: rawIndivPrice,
         levy,
         penalty,
         penaltyRate,
@@ -162,11 +172,11 @@ export default function App() {
     }), { levy: 0, penalty: 0, amount: 0, cf: 0, total: 0, litres: 0 });
   }, [rows]);
 
-  const updateLitres = (m: number, val: number) => {
+  const updateLitres = (m: number, val: number | '') => {
     setLitresMap(prev => ({ ...prev, [m]: val }));
   };
 
-  const updatePrice = (m: number, val: number) => {
+  const updatePrice = (m: number, val: number | '') => {
     setPricesMap(prev => ({ ...prev, [m]: val }));
   };
 
@@ -195,7 +205,7 @@ export default function App() {
           <p className="mt-4 text-xs font-bold text-left">To:&nbsp;&nbsp;&nbsp;&nbsp;{dboName}</p>
         )}
         <div className="flex justify-between pt-6 text-xs font-mono">
-          <span>PRICE PER LITRE: Ksh {pricingMode === 'general' ? price.toFixed(2) : 'Variable'}</span>
+          <span>PRICE PER LITRE: Ksh {pricingMode === 'general' ? (typeof price === 'number' ? price.toFixed(2) : '0.00') : 'Variable'}</span>
           <span>DATE: {new Date().toLocaleDateString()}</span>
         </div>
       </div>
@@ -261,7 +271,17 @@ export default function App() {
               <input 
                 type="number" 
                 value={arrearsCount} 
-                onChange={(e) => setArrearsCount(Math.max(1, parseInt(e.target.value) || 1))}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '') {
+                    setArrearsCount('');
+                  } else {
+                    const parsed = parseInt(val, 10);
+                    setArrearsCount(isNaN(parsed) ? '' : Math.max(0, parsed));
+                  }
+                }}
+                placeholder="1"
+                min="0"
                 className="bg-transparent font-mono text-xs focus:outline-none w-full"
               />
             </div>
@@ -302,9 +322,19 @@ export default function App() {
               <input 
                 type="number" 
                 value={price} 
-                onChange={(e) => setPrice(parseFloat(e.target.value) || 0)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '') {
+                    setPrice('');
+                  } else {
+                    const parsed = parseFloat(val);
+                    setPrice(isNaN(parsed) ? '' : parsed);
+                  }
+                }}
+                placeholder="0.40"
                 className="bg-transparent font-mono text-xs focus:outline-none w-full"
                 step="0.01"
+                min="0"
               />
             </div>
           </div>
@@ -347,21 +377,29 @@ export default function App() {
                         <td>
                           <input 
                             type="number" 
-                            value={row.litres || ''} 
-                            onChange={(e) => updateLitres(row.m, parseFloat(e.target.value) || 0)}
+                            value={litresMap[row.m] !== undefined && litresMap[row.m] !== '' ? litresMap[row.m] : ''} 
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              updateLitres(row.m, val === '' ? '' : parseFloat(val));
+                            }}
                             placeholder="0"
                             className="bg-transparent w-20 focus:outline-none font-bold text-blue-500 dark:text-blue-400 print:text-black placeholder-zinc-500/40"
+                            min="0"
                           />
                         </td>
                         {pricingMode === 'individual' && (
                           <td>
                             <input 
                               type="number" 
-                              value={row.price || ''} 
-                              onChange={(e) => updatePrice(row.m, parseFloat(e.target.value) || 0)}
-                              placeholder={price.toString()}
+                              value={row.priceInput !== undefined && row.priceInput !== '' ? row.priceInput : ''} 
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                updatePrice(row.m, val === '' ? '' : parseFloat(val));
+                              }}
+                              placeholder={typeof price === 'number' ? price.toString() : '0.40'}
                               className="bg-transparent w-16 focus:outline-none font-mono text-xs text-zinc-500 dark:text-zinc-400 print:text-black"
                               step="0.01"
+                              min="0"
                             />
                           </td>
                         )}
@@ -407,7 +445,7 @@ export default function App() {
             <div className="hidden print:block mt-6 px-4">
               <div className="space-y-6">
                 <div className="text-right">
-                  <p className="text-xs font-bold italic">This estimate is valid till {validityDate}</p>
+                  <p className="text-xs font-bold italic">This estimate is valid through {validityDate}; figures subject to recalculation thereafter</p>
                 </div>
                 <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-lg w-fit">
                   <p className="text-zinc-500 text-[10px] uppercase tracking-widest text-black mb-1">Grand Total Due (Ksh)</p>
