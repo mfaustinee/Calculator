@@ -36,6 +36,22 @@ function cn(...inputs: ClassValue[]) {
 const DEFAULT_PRICE = 0.40;
 const DEFAULT_CF = 50;
 
+// Helper to format date strictly as DD/MM/YYYY
+const formatDateDDMMYYYY = (d: Date = new Date()): string => {
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+// Helper to capitalize the first letter of each word/name only
+const toTitleCase = (str: string): string => {
+  if (!str) return '';
+  return str.replace(/\b([a-zA-Z])([a-zA-Z]*)/g, (_, first, rest) => {
+    return first.toUpperCase() + rest.toLowerCase();
+  });
+};
+
 // Helper to format and subtract months
 const getMonthLabel = (baseDate: Date, arrearsIndex: number) => {
   const d = new Date(baseDate);
@@ -197,7 +213,7 @@ export default function App() {
       <div className="hidden print:block text-center space-y-1 mb-8 border-b-2 border-black pb-6">
         <h2 className="text-xl font-bold uppercase">Kenya Dairy Board - Kericho</h2>
         <p className="text-sm">Ardhi House (Huduma Centre) 5th Floor, Wing B.</p>
-        <p className="text-sm">Tel: 0717997465 / 0734026367</p>
+        <p className="text-sm">Tel: 0717997465 | Email: Kericho@kdb.co.ke | Website: www.kdb.go.ke</p>
         <div className="pt-2 text-center">
           <h1 className="text-2xl font-black underline decoration-2 underline-offset-4">CONSUMER SAFETY LEVY ESTIMATE</h1>
         </div>
@@ -206,7 +222,7 @@ export default function App() {
         )}
         <div className="flex justify-between pt-6 text-xs font-mono">
           <span>PRICE PER LITRE: Ksh {pricingMode === 'general' ? (typeof price === 'number' ? price.toFixed(2) : '0.00') : 'Variable'}</span>
-          <span>DATE: {new Date().toLocaleDateString()}</span>
+          <span>DATE: {formatDateDDMMYYYY(new Date())}</span>
         </div>
       </div>
 
@@ -463,7 +479,9 @@ export default function App() {
                     </div>
                   )}
                   {officerName && (
-                    <p className="text-sm font-bold uppercase border-b border-black pb-1 mb-1 w-fit min-w-[200px]">{officerName}</p>
+                    <p className="text-sm font-bold border-b border-black pb-1 mb-1 w-fit min-w-[200px]">
+                      {toTitleCase(officerName)}
+                    </p>
                   )}
                   <p className="text-[10px] uppercase font-bold tracking-widest">Authorized Signature</p>
                 </div>
@@ -576,6 +594,7 @@ export default function App() {
                     type="text" 
                     value={officerName} 
                     onChange={(e) => setOfficerName(e.target.value)}
+                    onBlur={() => setOfficerName(prev => toTitleCase(prev))}
                     placeholder="Enter Officer Name"
                     className="bg-transparent font-mono text-xs focus:outline-none w-full text-[var(--text-main)] placeholder-zinc-500/50"
                   />
@@ -584,29 +603,63 @@ export default function App() {
 
               <div className="space-y-2">
                 <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Authorized Signature</label>
-                <div className="relative group">
-                <input 
-                  type="file" 
-                  accept="image/*"
-                  onChange={handleSignatureUpload}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                />
-                <div className="flex items-center justify-center gap-2 py-3 border-2 border-dashed border-[var(--border)] rounded-xl group-hover:border-blue-500/50 transition-all duration-200 bg-[var(--input-bg)]/40">
-                  {signature ? (
-                    <div className="flex items-center gap-2">
-                      <ImageIcon size={16} className="text-emerald-500" />
-                      <span className="text-xs text-emerald-500 font-medium">Signature Loaded</span>
+                {signature ? (
+                  <div className="flex items-center justify-between p-2.5 rounded-xl border border-[var(--border)] bg-[var(--input-bg)]/40">
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-14 bg-white rounded border border-zinc-200 flex items-center justify-center p-1 shadow-sm overflow-hidden">
+                        <img src={signature} alt="Uploaded signature preview" className="h-full max-w-full object-contain" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5 text-xs text-emerald-500 font-medium">
+                          <ImageIcon size={14} />
+                          <span>Signature Attached</span>
+                        </div>
+                        <p className="text-[10px] text-zinc-500 dark:text-zinc-400">Included on official estimate</p>
+                      </div>
                     </div>
-                  ) : (
-                    <div className="flex items-center gap-2 text-zinc-500">
-                      <Upload size={16} />
-                      <span className="text-xs">Upload Signature</span>
+                    <div className="flex items-center gap-1.5">
+                      <label 
+                        className="px-2 py-1 text-xs text-zinc-500 dark:text-zinc-400 hover:text-[var(--text-main)] hover:bg-[var(--accent)]/10 rounded-lg cursor-pointer transition-colors"
+                        title="Change signature image"
+                      >
+                        Change
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={handleSignatureUpload}
+                          className="hidden"
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setSignature(null)}
+                        className="p-1.5 text-red-500 hover:text-red-600 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-xs font-medium"
+                        title="Remove uploaded signature"
+                        aria-label="Remove uploaded signature"
+                      >
+                        <Trash2 size={14} />
+                        <span>Remove</span>
+                      </button>
                     </div>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <div className="relative group">
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={handleSignatureUpload}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    />
+                    <div className="flex items-center justify-center gap-2 py-3 border-2 border-dashed border-[var(--border)] rounded-xl group-hover:border-blue-500/50 transition-all duration-200 bg-[var(--input-bg)]/40">
+                      <div className="flex items-center gap-2 text-zinc-500">
+                        <Upload size={16} />
+                        <span className="text-xs">Upload Signature</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
 
             <button 
               onClick={() => window.print()}
