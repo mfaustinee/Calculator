@@ -25,6 +25,8 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts';
+import { PWAInstallButton } from './components/PWAInstallButton';
+import { OfflineIndicator } from './components/OfflineIndicator';
 
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -238,18 +240,21 @@ export default function App() {
               <p className="text-zinc-500 text-sm">Official utility compounding & arrears sequencing</p>
             </div>
             
-            <button
-              onClick={() => setTheme(curr => curr === 'dark' ? 'light' : 'dark')}
-              className="p-2.5 rounded-xl glass-card text-[var(--text-main)] hover:bg-[var(--accent)]/10 cursor-pointer transition-all duration-200 border border-[var(--border)] active:scale-95"
-              aria-label="Toggle Theme"
-              title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
-            >
-              {theme === 'dark' ? (
-                <Sun className="text-amber-400" size={18} />
-              ) : (
-                <Moon className="text-blue-600" size={18} />
-              )}
-            </button>
+            <div className="flex items-center gap-2">
+              <PWAInstallButton />
+              <button
+                onClick={() => setTheme(curr => curr === 'dark' ? 'light' : 'dark')}
+                className="p-2.5 rounded-xl glass-card text-[var(--text-main)] hover:bg-[var(--accent)]/10 cursor-pointer transition-all duration-200 border border-[var(--border)] active:scale-95"
+                aria-label="Toggle Theme"
+                title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+              >
+                {theme === 'dark' ? (
+                  <Sun className="text-amber-400" size={18} />
+                ) : (
+                  <Moon className="text-blue-600" size={18} />
+                )}
+              </button>
+            </div>
           </div>
           
           <div className="flex flex-col gap-1 max-w-xs">
@@ -675,6 +680,9 @@ export default function App() {
       {/* Official Print Footer (Hidden on Screen) */}
       <div className="hidden print:block pt-8 border-t border-zinc-200 mt-8">
       </div>
+
+      {/* Offline Status Toast */}
+      <OfflineIndicator />
     </div>
   );
 }

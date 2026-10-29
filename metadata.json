@@ -1,6 +1,6 @@
 {
   "name": "KDB Levy Calculator",
-  "description": "",
+  "description": "Kenya Dairy Board Consumer Safety Levy Calculator & Validation Management",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
