@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "lastUpdated": "2026-11-02",
+  "company": {
+    "name": "Kenya Dairy Board",
+    "website": "www.kdb.go.ke",
+    "registeredOffice": {
+      "address": "",
+      "telephone": "",
+      "email": ""
+    }
+  },
+  "branches": [
+    {
+      "id": "kericho",
+      "name": "Kericho Office",
+      "address": "Ardhi House (Huduma Centre), 5th Floor, Wing B.",
+      "telephone": "0717997465",
+      "email": "Kericho@kdb.co.ke",
+      "active": true
+    }
+  ]
+}

@@ -27,6 +27,7 @@ import {
 } from 'recharts';
 import { PWAInstallButton } from './components/PWAInstallButton';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import { loadCompanyConfig, type CompanyBranch, type CompanyConfig } from './config/companyConfig';
 
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -95,6 +96,70 @@ export default function App() {
   const [signature, setSignature] = useState<string | null>(null);
   const [officerName, setOfficerName] = useState<string>('');
   const [dboName, setDboName] = useState<string>('');
+  const [companyConfig, setCompanyConfig] = useState<CompanyConfig | null>(null);
+  const [configStatus, setConfigStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [configSource, setConfigSource] = useState<'network' | 'local' | null>(null);
+  const [configError, setConfigError] = useState<string>('');
+  // The default branch is stored per browser/PWA installation.
+  const [selectedBranchId, setSelectedBranchId] = useState<string>('');
+
+  useEffect(() => {
+    let mounted = true;
+    loadCompanyConfig()
+      .then(({ config, source }) => {
+        if (!mounted) return;
+        setCompanyConfig(config);
+        setConfigSource(source);
+        setConfigStatus('ready');
+        setConfigError('');
+
+        // Restore this installation's assigned branch. If the configuration only
+        // contains one active branch, assign it automatically on first use.
+        const active = config.branches.filter((branch: CompanyBranch) => branch.active);
+        let savedBranchId = '';
+        try {
+          savedBranchId = localStorage.getItem('kdb-levy-calculator:default-branch') ?? '';
+        } catch {
+          // The app can still be used if browser storage is unavailable.
+        }
+        const savedBranchIsActive = active.some((branch) => branch.id === savedBranchId);
+        if (savedBranchIsActive) {
+          setSelectedBranchId(savedBranchId);
+        } else if (active.length === 1) {
+          setSelectedBranchId(active[0].id);
+        } else {
+          setSelectedBranchId('');
+        }
+      })
+      .catch((error: unknown) => {
+        if (!mounted) return;
+        setConfigStatus('error');
+        setConfigError(error instanceof Error ? error.message : 'Unable to load company configuration');
+      });
+    return () => { mounted = false; };
+  }, []);
+
+  const activeBranches = useMemo(
+    () => companyConfig?.branches.filter((branch: CompanyBranch) => branch.active) ?? [],
+    [companyConfig]
+  );
+  const selectedBranch = useMemo(
+    () => activeBranches.find((branch) => branch.id === selectedBranchId) ?? null,
+    [activeBranches, selectedBranchId]
+  );
+
+  useEffect(() => {
+    if (configStatus !== 'ready') return;
+    try {
+      if (selectedBranchId && selectedBranch) {
+        localStorage.setItem('kdb-levy-calculator:default-branch', selectedBranchId);
+      } else {
+        localStorage.removeItem('kdb-levy-calculator:default-branch');
+      }
+    } catch {
+      // Selection remains active for this session even if it cannot be persisted.
+    }
+  }, [configStatus, selectedBranchId, selectedBranch]);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -213,9 +278,24 @@ export default function App() {
     <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-8">
       {/* Official Print Header (Hidden on Screen) */}
       <div className="hidden print:block text-center space-y-1 mb-8 border-b-2 border-black pb-6">
-        <h2 className="text-xl font-bold uppercase">Kenya Dairy Board - Kericho</h2>
-        <p className="text-sm">Ardhi House (Huduma Centre) 5th Floor, Wing B.</p>
-        <p className="text-sm">Tel: 0717997465 | Email: Kericho@kdb.co.ke | Website: www.kdb.go.ke</p>
+        {companyConfig && selectedBranch ? (
+          <>
+            <h2 className="text-xl font-bold uppercase">{companyConfig.company.name} - {selectedBranch.name}</h2>
+            {selectedBranch.address && <p className="text-sm">{selectedBranch.address}</p>}
+            {(selectedBranch.telephone || selectedBranch.email || companyConfig.company.website) && (
+              <p className="text-sm">
+                {[selectedBranch.telephone ? `Tel: ${selectedBranch.telephone}` : '', selectedBranch.email ? `Email: ${selectedBranch.email}` : '', companyConfig.company.website ? `Website: ${companyConfig.company.website}` : ''].filter(Boolean).join(' | ')}
+              </p>
+            )}
+            {companyConfig.company.registeredOffice?.address && (
+              <p className="text-xs">Registered Office: {companyConfig.company.registeredOffice.address}</p>
+            )}
+          </>
+        ) : (
+          <div className="p-3 border-2 border-red-600 text-red-700 font-bold text-sm bg-red-50 rounded">
+            CONFIGURATION ERROR: Please select an official issuing branch before printing this estimate.
+          </div>
+        )}
         <div className="pt-2 text-center">
           <h1 className="text-2xl font-black underline decoration-2 underline-offset-4">CONSUMER SAFETY LEVY ESTIMATE</h1>
         </div>
@@ -257,6 +337,28 @@ export default function App() {
             </div>
           </div>
           
+          <div className="flex flex-col gap-1 max-w-xs">
+            <label htmlFor="issuing-branch" className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Default Branch for This Installation</label>
+            <div className="flex items-center gap-2 glass-card px-3 py-2">
+              <Layers size={14} className="text-zinc-500" />
+              <select
+                id="issuing-branch"
+                value={selectedBranchId}
+                onChange={(e) => setSelectedBranchId(e.target.value)}
+                disabled={configStatus !== 'ready' || activeBranches.length === 0}
+                className="bg-transparent font-mono text-xs focus:outline-none w-full text-[var(--text-main)]"
+              >
+                <option value="" className="text-black">{configStatus === 'loading' ? 'Loading branches...' : configStatus === 'error' ? 'Configuration unavailable' : 'Choose this installation’s branch'}</option>
+                {activeBranches.map((branch) => (
+                  <option key={branch.id} value={branch.id} className="text-black">{branch.name}</option>
+                ))}
+              </select>
+            </div>
+            <p className="text-[10px] text-zinc-500">Saved on this device and automatically used for estimates from this installation. You can change it here if this computer is reassigned.</p>
+            {configStatus === 'error' && <p className="text-xs text-red-500" role="alert">{configError}</p>}
+            {configStatus === 'ready' && configSource === 'local' && <p className="text-[10px] text-amber-500">Using saved offline configuration</p>}
+          </div>
+
           <div className="flex flex-col gap-1 max-w-xs">
             <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">To: DBO Name</label>
             <div className="flex items-center gap-2 glass-card px-3 py-2">
@@ -668,7 +770,9 @@ export default function App() {
 
             <button 
               onClick={() => window.print()}
-              className="w-full mt-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 print:hidden"
+              disabled={!selectedBranch}
+              title={!selectedBranch ? 'Select an issuing branch before printing' : 'Export PDF / Print'}
+              className="w-full mt-6 py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 print:hidden"
             >
               <Download size={18} />
               Export PDF / Print

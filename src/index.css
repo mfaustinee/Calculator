@@ -96,16 +96,30 @@ body {
   background: #3f3f46;
 }
 
+/* Page print settings: margin 0 suppresses browser-injected header/footer (removing app URL at bottom) */
+@page {
+  margin: 0;
+  size: portrait;
+}
+
 @media print {
   @page {
     margin: 0;
     size: portrait;
   }
   
-  body {
+  html, body {
     background: white !important;
     color: black !important;
-    padding: 1.5cm;
+    margin: 0 !important;
+    padding: 1.2cm 1.5cm !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Prevent browser or Tailwind from appending href URLs after links on print */
+  a[href]:after {
+    content: none !important;
   }
 
   .font-condensed {
