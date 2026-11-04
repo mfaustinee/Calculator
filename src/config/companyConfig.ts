@@ -1,167 +1,210 @@
-export interface OfficeDetails {
-  address?: string;
-  telephone?: string;
-  email?: string;
-}
-
-export interface CompanyBranch {
-  id: string;
-  name: string;
-  address?: string;
-  telephone?: string;
-  email?: string;
-  active: boolean;
-  isHeadOffice?: boolean;
-}
-
 export interface CompanyConfig {
   version: number;
   lastUpdated?: string;
   company: {
     name: string;
     website?: string;
-    registeredOffice?: OfficeDetails;
+    registeredOffice?: { address?: string; telephone?: string; email?: string };
   };
-  branches: CompanyBranch[];
+  branch: {
+    id: string;
+    name: string;
+    address?: string;
+    telephone?: string;
+    email?: string;
+    active: boolean;
+  };
 }
 
-const CONFIG_URL = `${import.meta.env.BASE_URL}company-config.json`;
+export interface DeviceContext {
+  installationId: string;
+  credential: string;
+  config: CompanyConfig | null;
+}
+
+export type ConfigSource = 'network' | 'local';
+
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
 const DB_NAME = 'kdb-levy-calculator-config';
 const STORE_NAME = 'configuration';
-const CONFIG_KEY = 'company-config';
+const DEVICE_CONTEXT_KEY = 'device-context';
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function validateConfig(value: unknown): value is CompanyConfig {
-  if (!isRecord(value) || !isRecord(value.company) || !Array.isArray(value.branches)) {
-    return false;
+class ApiError extends Error {
+  constructor(message: string, public status: number) {
+    super(message);
+    this.name = 'ApiError';
   }
-
-  if (
-    typeof value.version !== 'number' ||
-    typeof value.company.name !== 'string' ||
-    value.company.name.trim().length === 0
-  ) {
-    return false;
-  }
-
-  return value.branches.every((branch) =>
-    isRecord(branch) &&
-    typeof branch.id === 'string' && branch.id.trim().length > 0 &&
-    typeof branch.name === 'string' && branch.name.trim().length > 0 &&
-    typeof branch.active === 'boolean' &&
-    (branch.isHeadOffice === undefined || typeof branch.isHeadOffice === 'boolean')
-  );
 }
 
 function openConfigDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     if (typeof indexedDB === 'undefined') {
-      reject(new Error('IndexedDB is unavailable'));
+      reject(new Error('This browser does not support the storage required for device activation.'));
       return;
     }
 
-    const request = indexedDB.open(DB_NAME, 1);
+    const request = indexedDB.open(DB_NAME, 2);
     request.onupgradeneeded = () => {
       const db = request.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME);
-      }
+      if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME);
     };
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error ?? new Error('Could not open configuration storage'));
+    request.onerror = () => reject(request.error ?? new Error('Could not open device storage.'));
   });
 }
 
-async function saveLocalConfig(config: CompanyConfig): Promise<void> {
+async function readDeviceContext(): Promise<DeviceContext | null> {
   const db = await openConfigDb();
-  await new Promise<void>((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, 'readwrite');
-    transaction.objectStore(STORE_NAME).put(config, CONFIG_KEY);
-    transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error ?? new Error('Could not save configuration'));
-    transaction.onabort = () => reject(transaction.error ?? new Error('Configuration save was interrupted'));
-  });
-  db.close();
+  try {
+    return await new Promise((resolve, reject) => {
+      const request = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).get(DEVICE_CONTEXT_KEY);
+      request.onsuccess = () => resolve(request.result ?? null);
+      request.onerror = () => reject(request.error ?? new Error('Could not read saved device details.'));
+    });
+  } finally {
+    db.close();
+  }
 }
 
-async function readLocalConfig(): Promise<CompanyConfig | null> {
+async function saveDeviceContext(context: DeviceContext): Promise<void> {
   const db = await openConfigDb();
-  const result = await new Promise<unknown>((resolve, reject) => {
-    const request = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).get(CONFIG_KEY);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error ?? new Error('Could not read saved configuration'));
-  });
-  db.close();
-  return validateConfig(result) ? result : null;
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const transaction = db.transaction(STORE_NAME, 'readwrite');
+      transaction.objectStore(STORE_NAME).put(context, DEVICE_CONTEXT_KEY);
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error ?? new Error('Could not save device activation.'));
+      transaction.onabort = () => reject(transaction.error ?? new Error('Saving device activation was interrupted.'));
+    });
+  } finally {
+    db.close();
+  }
 }
 
-export interface LoadedCompanyConfig {
-  config: CompanyConfig;
-  source: 'network' | 'local';
+function mapServerConfiguration(payload: any): CompanyConfig {
+  const company = payload?.configuration?.company;
+  const branch = payload?.configuration?.branch;
+  if (!company || !branch || typeof branch.id !== 'string' || typeof branch.name !== 'string' || typeof company.company_name !== 'string') {
+    throw new Error('The server returned an incomplete company or branch configuration.');
+  }
+
+  const branchVersion = Number(branch.config_version) || 0;
+  const companyVersion = Number(company.config_version) || 0;
+
+  return {
+    version: Math.max(branchVersion, companyVersion),
+    lastUpdated: company.updated_at,
+    company: {
+      name: company.company_name,
+      website: company.website || undefined,
+      registeredOffice: {
+        address: company.registered_office || undefined,
+        telephone: company.telephone || undefined,
+        email: company.email || undefined,
+      },
+    },
+    branch: {
+      id: branch.id,
+      name: branch.name,
+      address: branch.address || undefined,
+      telephone: branch.telephone || undefined,
+      email: branch.email || undefined,
+      active: true,
+    },
+  };
 }
 
-/**
- * Fetch the published configuration first. Workbox precaches this JSON file,
- * so the request is also available offline. IndexedDB is a second fallback.
- */
-export async function loadCompanyConfig(): Promise<LoadedCompanyConfig> {
-  const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
-
-  if (isOnline) {
-    try {
-      const response = await fetch(CONFIG_URL, { cache: 'no-cache' });
-      if (!response.ok) {
-        throw new Error(`Configuration request failed (${response.status})`);
-      }
-
-      const candidate: unknown = await response.json();
-      if (!validateConfig(candidate)) {
-        throw new Error('The published company configuration has an invalid format');
-      }
-
-      try {
-        await saveLocalConfig(candidate);
-      } catch {
-        // The service-worker precache still provides offline access if IndexedDB is unavailable.
-      }
-
-      return { config: candidate, source: 'network' };
-    } catch (networkError) {
-      // Fallback to local storage if network request fails while nominally online
-      try {
-        const saved = await readLocalConfig();
-        if (saved) return { config: saved, source: 'local' };
-      } catch {
-        // Report original error below
-      }
-
-      const message = networkError instanceof Error ? networkError.message : 'Unable to load company configuration';
-      throw new Error(`${message}. Connect to the internet and reopen the application to download the configuration.`);
-    }
+async function requestConfiguration(credential: string): Promise<CompanyConfig> {
+  if (!API_BASE_URL) {
+    throw new Error('The API address has not been configured for this application.');
   }
 
-  // Explicitly offline mode: read from IndexedDB first, then fallback to fetch (for SW precache)
+  let response: Response;
   try {
-    const saved = await readLocalConfig();
-    if (saved) return { config: saved, source: 'local' };
+    response = await fetch(`${API_BASE_URL}/api/device/config`, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${credential}` },
+      cache: 'no-store',
+    });
   } catch {
-    // Continue to SW fetch attempt
+    throw new Error('Unable to reach the activation server. Check your internet connection.');
+  }
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(payload.error || 'The device could not be authorised.', response.status);
+  }
+  return mapServerConfiguration(payload);
+}
+
+export async function activateDevice(activationCode: string): Promise<DeviceContext> {
+  if (!API_BASE_URL) {
+    throw new Error('The API address has not been configured for this application.');
+  }
+  if (!navigator.onLine) throw new Error('An internet connection is required for first-time activation.');
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/api/device/activate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ activation_code: activationCode.trim() }),
+    });
+  } catch {
+    throw new Error('Could not reach the activation server. Check your internet connection and try again.');
+  }
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.message || payload.error || 'Activation failed. Check the code and try again.');
+
+  if (payload.status !== 'ok' || typeof payload.device_credential !== 'string' || typeof payload.installation_id !== 'string') {
+    throw new Error('The activation server returned an invalid activation response.');
+  }
+
+  // Save the credential immediately: the activation code is single-use. If the
+  // following configuration request is interrupted, this device can retry it.
+  const context: DeviceContext = {
+    installationId: payload.installation_id,
+    credential: payload.device_credential,
+    config: null,
+  };
+  await saveDeviceContext(context);
+
+  const fullConfig = await requestConfiguration(payload.device_credential);
+  const activated = { ...context, config: fullConfig };
+  await saveDeviceContext(activated);
+  return activated;
+}
+
+export async function loadDeviceContext(): Promise<{ context: DeviceContext; source: ConfigSource }> {
+  const saved = await readDeviceContext();
+  if (!saved?.credential || !saved?.installationId) {
+    throw new Error('This installation has not been activated. Enter an activation code to continue.');
+  }
+
+  if (!navigator.onLine) {
+    if (saved.config) return { context: saved, source: 'local' };
+    throw new Error('This device is activated but has not yet downloaded its configuration. Connect to the internet to finish setup.');
   }
 
   try {
-    const response = await fetch(CONFIG_URL);
-    if (response.ok) {
-      const candidate: unknown = await response.json();
-      if (validateConfig(candidate)) {
-        return { config: candidate, source: 'local' };
-      }
+    const freshConfig = await requestConfiguration(saved.credential);
+    const updated = { ...saved, config: freshConfig };
+    await saveDeviceContext(updated);
+    return { context: updated, source: 'network' };
+  } catch (error) {
+    // Authentication or branch deactivation must not fall back to stale data.
+    if (error instanceof ApiError && (error.status === 401 || error.status === 403 || error.status === 404)) {
+      throw new Error(error.message);
     }
-  } catch {
-    // SW cache miss
+    if (saved.config) return { context: saved, source: 'local' };
+    throw error;
   }
+}
 
-  throw new Error('Unable to load company configuration. Connect to the internet and reopen the application to download the configuration.');
+export async function refreshDeviceConfiguration(context: DeviceContext): Promise<DeviceContext> {
+  const config = await requestConfiguration(context.credential);
+  const updated = { ...context, config };
+  await saveDeviceContext(updated);
+  return updated;
 }

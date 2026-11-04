@@ -27,7 +27,7 @@ import {
 } from 'recharts';
 import { PWAInstallButton } from './components/PWAInstallButton';
 import { OfflineIndicator } from './components/OfflineIndicator';
-import { loadCompanyConfig, type CompanyBranch, type CompanyConfig } from './config/companyConfig';
+import { activateDevice, loadDeviceContext, refreshDeviceConfiguration, type CompanyConfig, type DeviceContext } from './config/companyConfig';
 
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -100,66 +100,102 @@ export default function App() {
   const [configStatus, setConfigStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [configSource, setConfigSource] = useState<'network' | 'local' | null>(null);
   const [configError, setConfigError] = useState<string>('');
-  // The default branch is stored per browser/PWA installation.
-  const [selectedBranchId, setSelectedBranchId] = useState<string>('');
+  const [deviceContext, setDeviceContext] = useState<DeviceContext | null>(null);
+  const [activationCode, setActivationCode] = useState('');
+  const [isActivating, setIsActivating] = useState(false);
 
   useEffect(() => {
     let mounted = true;
-    loadCompanyConfig()
-      .then(({ config, source }) => {
+    loadDeviceContext()
+      .then(({ context, source }) => {
         if (!mounted) return;
-        setCompanyConfig(config);
-        setConfigSource(source);
-        setConfigStatus('ready');
-        setConfigError('');
-
-        // Restore this installation's assigned branch. If the configuration only
-        // contains one active branch, assign it automatically on first use.
-        const active = config.branches.filter((branch: CompanyBranch) => branch.active);
-        let savedBranchId = '';
-        try {
-          savedBranchId = localStorage.getItem('kdb-levy-calculator:default-branch') ?? '';
-        } catch {
-          // The app can still be used if browser storage is unavailable.
-        }
-        const savedBranchIsActive = active.some((branch) => branch.id === savedBranchId);
-        if (savedBranchIsActive) {
-          setSelectedBranchId(savedBranchId);
-        } else if (active.length === 1) {
-          setSelectedBranchId(active[0].id);
+        setDeviceContext(context);
+        if (context.config) {
+          setCompanyConfig(context.config);
+          setConfigSource(source);
+          setConfigStatus('ready');
+          setConfigError('');
         } else {
-          setSelectedBranchId('');
+          setConfigStatus('error');
+          setConfigError('Device activated. Connect to the internet to download its assigned branch configuration.');
         }
       })
       .catch((error: unknown) => {
         if (!mounted) return;
         setConfigStatus('error');
-        setConfigError(error instanceof Error ? error.message : 'Unable to load company configuration');
+        setConfigError(error instanceof Error ? error.message : 'Unable to load device configuration');
       });
     return () => { mounted = false; };
   }, []);
 
-  const activeBranches = useMemo(
-    () => companyConfig?.branches.filter((branch: CompanyBranch) => branch.active) ?? [],
-    [companyConfig]
-  );
-  const selectedBranch = useMemo(
-    () => activeBranches.find((branch) => branch.id === selectedBranchId) ?? null,
-    [activeBranches, selectedBranchId]
-  );
-
   useEffect(() => {
-    if (configStatus !== 'ready') return;
-    try {
-      if (selectedBranchId && selectedBranch) {
-        localStorage.setItem('kdb-levy-calculator:default-branch', selectedBranchId);
-      } else {
-        localStorage.removeItem('kdb-levy-calculator:default-branch');
+    if (!deviceContext) return;
+    const sync = async () => {
+      try {
+        const updated = await refreshDeviceConfiguration(deviceContext);
+        setDeviceContext(updated);
+        setCompanyConfig(updated.config);
+        setConfigSource('network');
+        setConfigStatus('ready');
+        setConfigError('');
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Could not synchronise configuration';
+        const status = (error as { status?: number })?.status;
+        // Only an explicit server-side rejection (revocation/inactive branch or
+        // missing company setup) blocks the cached installation. Network failures
+        // leave the last approved offline configuration available.
+        if (status === 401 || status === 403 || status === 404) {
+          setCompanyConfig(null);
+          setConfigStatus('error');
+          setConfigError(message);
+        } else if (deviceContext.config) {
+          setCompanyConfig(deviceContext.config);
+          setConfigSource('local');
+          setConfigStatus('ready');
+        }
       }
-    } catch {
-      // Selection remains active for this session even if it cannot be persisted.
+    };
+    window.addEventListener('online', sync);
+    return () => window.removeEventListener('online', sync);
+  }, [deviceContext]);
+
+  const selectedBranch = companyConfig?.branch ?? null;
+
+  const handleDeviceActivation = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!activationCode.trim()) return;
+    setIsActivating(true);
+    setConfigError('');
+    try {
+      const activated = await activateDevice(activationCode);
+      setDeviceContext(activated);
+      setCompanyConfig(activated.config);
+      setConfigSource('network');
+      setConfigStatus('ready');
+      setActivationCode('');
+    } catch (error) {
+      // If activation succeeded but the immediate configuration download was
+      // interrupted, recover the newly saved device credential without asking
+      // the user to redeem the now-consumed code again.
+      try {
+        const recovered = await loadDeviceContext();
+        setDeviceContext(recovered.context);
+        if (recovered.context.config) {
+          setCompanyConfig(recovered.context.config);
+          setConfigSource(recovered.source);
+          setConfigStatus('ready');
+          setConfigError('');
+          return;
+        }
+      } catch {
+        // Fall through to the original activation/configuration error.
+      }
+      setConfigStatus('error');
+      setConfigError(error instanceof Error ? error.message : 'Activation failed');
+    } finally {
+      setIsActivating(false);
     }
-  }, [configStatus, selectedBranchId, selectedBranch]);
+  };
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -274,6 +310,54 @@ export default function App() {
     return lastDay.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
   }, []);
 
+  if (configStatus !== 'ready' || !companyConfig || !selectedBranch) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 md:p-8">
+        <div className="w-full max-w-md glass-card rounded-2xl p-6 md:p-8 space-y-6">
+          <div className="flex items-center gap-3">
+            <TrendingUp className="text-blue-500" size={30} />
+            <div>
+              <h1 className="text-2xl font-bold text-[var(--text-main)]">KDB Levy Calculator</h1>
+              <p className="text-xs text-zinc-500">Device activation</p>
+            </div>
+          </div>
+          {configStatus === 'loading' ? (
+            <div className="flex items-center gap-3 text-sm text-zinc-500"><RefreshCcw className="animate-spin" size={18} /> Checking this device’s activation...</div>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <h2 className="text-lg font-semibold text-[var(--text-main)]">Activate this installation</h2>
+                <p className="text-sm text-zinc-500">Enter the single-use activation code issued by your administrator. This device will be assigned to one branch.</p>
+              </div>
+              <form onSubmit={handleDeviceActivation} className="space-y-4">
+                <input
+                  type="text"
+                  value={activationCode}
+                  onChange={(event) => setActivationCode(event.target.value)}
+                  placeholder="Enter activation code"
+                  autoComplete="off"
+                  autoCapitalize="characters"
+                  spellCheck={false}
+                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--input-bg)] px-4 py-3 font-mono text-sm tracking-wider text-[var(--text-main)] outline-none focus:border-blue-500"
+                  disabled={isActivating}
+                />
+                {configError && <p className="text-sm text-red-500" role="alert">{configError}</p>}
+                <button
+                  type="submit"
+                  disabled={isActivating || !activationCode.trim()}
+                  className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isActivating ? 'Activating device...' : 'Activate device'}
+                </button>
+              </form>
+              <p className="text-xs text-zinc-500">An internet connection is required for first-time activation. Once activated, the calculator can continue working offline using its saved branch configuration.</p>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-8">
       {/* Official Print Header (Hidden on Screen) */}
@@ -338,24 +422,12 @@ export default function App() {
           </div>
           
           <div className="flex flex-col gap-1 max-w-xs">
-            <label htmlFor="issuing-branch" className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Default Branch for This Installation</label>
+            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Assigned Branch</label>
             <div className="flex items-center gap-2 glass-card px-3 py-2">
               <Layers size={14} className="text-zinc-500" />
-              <select
-                id="issuing-branch"
-                value={selectedBranchId}
-                onChange={(e) => setSelectedBranchId(e.target.value)}
-                disabled={configStatus !== 'ready' || activeBranches.length === 0}
-                className="bg-transparent font-mono text-xs focus:outline-none w-full text-[var(--text-main)]"
-              >
-                <option value="" className="text-black">{configStatus === 'loading' ? 'Loading branches...' : configStatus === 'error' ? 'Configuration unavailable' : 'Choose this installation’s branch'}</option>
-                {activeBranches.map((branch) => (
-                  <option key={branch.id} value={branch.id} className="text-black">{branch.name}</option>
-                ))}
-              </select>
+              <span className="font-mono text-xs text-[var(--text-main)]">{selectedBranch?.name || (configStatus === 'loading' ? 'Loading device assignment...' : 'Not activated')}</span>
             </div>
-            <p className="text-[10px] text-zinc-500">Saved on this device and automatically used for estimates from this installation. You can change it here if this computer is reassigned.</p>
-            {configStatus === 'error' && <p className="text-xs text-red-500" role="alert">{configError}</p>}
+            <p className="text-[10px] text-zinc-500">This installation is locked to its administrator-assigned branch.</p>
             {configStatus === 'ready' && configSource === 'local' && <p className="text-[10px] text-amber-500">Using saved offline configuration</p>}
           </div>
 
