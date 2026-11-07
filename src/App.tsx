@@ -470,27 +470,30 @@ export default function App() {
       <div className="hidden print:block text-center space-y-1 mb-8 border-b-2 border-black pb-6">
 
   {/* Company and Branch Details */}
-  <div className="text-center text-xs leading-relaxed mb-5">
-    <p className="font-bold uppercase">
-      {companyConfig.company.name || ''}
-    </p>
+  {/* Company and Branch Details - PRINT ONLY */}
+<div className="text-center text-xs leading-relaxed mb-5">
+  <p className="font-bold uppercase">
+    {companyConfig.company.name || ''} - ({selectedBranch.name || ''})
+  </p>
 
-    <p className="font-semibold">
-      {selectedBranch.name}
-    </p>
+  {companyConfig.company.registeredOffice?.address && (
+    <p>{companyConfig.company.registeredOffice.address}</p>
+  )}
 
-    {selectedBranch.address && (
-      <p>{selectedBranch.address}</p>
-    )}
-
-    {selectedBranch.telephone && (
-      <p>Tel: {selectedBranch.telephone}</p>
-    )}
-
-    {selectedBranch.email && (
-      <p>Email: {selectedBranch.email}</p>
-    )}
-  </div>
+  <p>
+    {[
+      companyConfig.company.telephone
+        ? `Tel: ${companyConfig.company.telephone}`
+        : '',
+      companyConfig.company.email
+        ? `Email: ${companyConfig.company.email}`
+        : '',
+      companyConfig.company.website
+        ? `Website: ${companyConfig.company.website}`
+        : '',
+    ].filter(Boolean).join(' | ')}
+  </p>
+</div>
 
   {/* Document Title */}
   <div className="pt-2 text-center">
