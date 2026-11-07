@@ -471,7 +471,7 @@ export default function App() {
 
         {/* Company and Branch Name */}
         <h1 className="text-2xl font-black uppercase">
-          {companyConfig.company.name || ''} - {selectedBranch.name || ''}
+          {companyConfig.company.name || ''} - {selectedBranch.name}
         </h1>
 
         {/* Branch Address */}
@@ -481,24 +481,19 @@ export default function App() {
           </p>
         )}
 
-        {/* Branch Contacts and Company Website */}
+        {/* Branch Telephone, Branch Email and Company Website */}
         <p className="text-xs">
-          {selectedBranch.telephone
-            ? `Tel: ${selectedBranch.telephone}`
-            : ''}
-
-          {selectedBranch.telephone && selectedBranch.email ? ' | ' : ''}
-
-          {selectedBranch.email
-            ? `Email: ${selectedBranch.email}`
-            : ''}
-
-          {(selectedBranch.telephone || selectedBranch.email) &&
-            companyConfig.company.website ? ' | ' : ''}
-
-          {companyConfig.company.website
-            ? `Website: ${companyConfig.company.website}`
-            : ''}
+          {[
+            selectedBranch.telephone
+              ? `Tel: ${selectedBranch.telephone}`
+              : '',
+            selectedBranch.email
+              ? `Email: ${selectedBranch.email}`
+              : '',
+            companyConfig.company.website
+              ? `Website: ${companyConfig.company.website}`
+              : '',
+          ].filter(Boolean).join(' | ')}
         </p>
 
         {/* Document Title */}
