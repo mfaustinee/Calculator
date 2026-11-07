@@ -469,52 +469,59 @@ export default function App() {
       {/* Official Print Header (Hidden on Screen) */}
       <div className="hidden print:block text-center space-y-1 mb-8 border-b-2 border-black pb-6">
 
-  {/* Company and Branch Details */}
-  {/* Company and Branch Details - PRINT ONLY */}
-<div className="text-center text-xs leading-relaxed mb-5">
-  <p className="font-bold uppercase">
-    {companyConfig.company.name || ''} - ({selectedBranch.name || ''})
-  </p>
+        {/* Company and Branch Name */}
+        <h1 className="text-2xl font-black uppercase">
+          {companyConfig.company.name || ''} - {selectedBranch.name || ''}
+        </h1>
 
-  {companyConfig.company.registeredOffice?.address && (
-    <p>{companyConfig.company.registeredOffice.address}</p>
-  )}
+        {/* Branch Address */}
+        {selectedBranch.address && (
+          <p className="text-xs">
+            {selectedBranch.address}
+          </p>
+        )}
 
-  <p>
-    {[
-      companyConfig.company.telephone
-        ? `Tel: ${companyConfig.company.telephone}`
-        : '',
-      companyConfig.company.email
-        ? `Email: ${companyConfig.company.email}`
-        : '',
-      companyConfig.company.website
-        ? `Website: ${companyConfig.company.website}`
-        : '',
-    ].filter(Boolean).join(' | ')}
-  </p>
-</div>
+        {/* Branch Contacts and Company Website */}
+        <p className="text-xs">
+          {selectedBranch.telephone
+            ? `Tel: ${selectedBranch.telephone}`
+            : ''}
 
-  {/* Document Title */}
-  <div className="pt-2 text-center">
-    <h1 className="text-2xl font-black underline decoration-2 underline-offset-4">
-      CONSUMER SAFETY LEVY ESTIMATE
-    </h1>
-  </div>
+          {selectedBranch.telephone && selectedBranch.email ? ' | ' : ''}
 
-  {dboName && (
-    <p className="mt-4 text-xs font-bold text-left">
-      To:&nbsp;&nbsp;&nbsp;&nbsp;{dboName}
-    </p>
-  )}
+          {selectedBranch.email
+            ? `Email: ${selectedBranch.email}`
+            : ''}
 
-  <div className="flex justify-between pt-6 text-xs font-mono">
-    <span>
-      PRICE PER LITRE: Ksh {pricingMode === 'general' ? (typeof price === 'number' ? price.toFixed(2) : '0.00') : 'Variable'}
-    </span>
-    <span>DATE: {formatDateDDMMYYYY(new Date())}</span>
-  </div>
-</div>
+          {(selectedBranch.telephone || selectedBranch.email) &&
+            companyConfig.company.website ? ' | ' : ''}
+
+          {companyConfig.company.website
+            ? `Website: ${companyConfig.company.website}`
+            : ''}
+        </p>
+
+        {/* Document Title */}
+        <div className="pt-4 text-center">
+          <h1 className="text-2xl font-black underline decoration-2 underline-offset-4">
+            CONSUMER SAFETY LEVY ESTIMATE
+          </h1>
+        </div>
+
+        {dboName && (
+          <p className="mt-4 text-xs font-bold text-left">
+            To:&nbsp;&nbsp;&nbsp;&nbsp;{dboName}
+          </p>
+        )}
+
+        <div className="flex justify-between pt-6 text-xs font-mono">
+          <span>
+            PRICE PER LITRE: Ksh {pricingMode === 'general' ? (typeof price === 'number' ? price.toFixed(2) : '0.00') : 'Variable'}
+          </span>
+          <span>DATE: {formatDateDDMMYYYY(new Date())}</span>
+        </div>
+      </div>
+
       {/* Header Section (Hidden on Print) */}
       <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 print:hidden">
         <div className="flex flex-col gap-4 w-full lg:w-auto">
