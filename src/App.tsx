@@ -466,60 +466,52 @@ export default function App() {
   return (
     <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-8">
 
-      {/* Print-only footer visibility rules */}
-      <style>{`
-        .company-print-footer {
-          display: none;
-        }
-
-        @media print {
-          .company-print-footer {
-            display: block !important;
-            visibility: visible !important;
-            position: relative !important;
-            width: 100% !important;
-            margin-top: 35px !important;
-            padding-top: 10px !important;
-            border-top: 1px solid #000 !important;
-            text-align: center !important;
-            font-size: 10px !important;
-            line-height: 1.6 !important;
-            color: #000 !important;
-            opacity: 1 !important;
-            break-inside: avoid !important;
-            page-break-inside: avoid !important;
-          }
-
-          .company-print-footer p,
-          .company-print-footer strong {
-            color: #000 !important;
-            visibility: visible !important;
-          }
-        }
-      `}</style>
-
       {/* Official Print Header (Hidden on Screen) */}
       <div className="hidden print:block text-center space-y-1 mb-8 border-b-2 border-black pb-6">
-        <div className="pt-2 text-center">
-          <h1 className="text-2xl font-black underline decoration-2 underline-offset-4">
-            CONSUMER SAFETY LEVY ESTIMATE
-          </h1>
-        </div>
 
-        {dboName && (
-          <p className="mt-4 text-xs font-bold text-left">
-            To:&nbsp;&nbsp;&nbsp;&nbsp;{dboName}
-          </p>
-        )}
+  {/* Company and Branch Details */}
+  <div className="text-center text-xs leading-relaxed mb-5">
+    <p className="font-bold uppercase">
+      {companyConfig.company.name || ''}
+    </p>
 
-        <div className="flex justify-between pt-6 text-xs font-mono">
-          <span>
-            PRICE PER LITRE: Ksh {pricingMode === 'general' ? (typeof price === 'number' ? price.toFixed(2) : '0.00') : 'Variable'}
-          </span>
-          <span>DATE: {formatDateDDMMYYYY(new Date())}</span>
-        </div>
-      </div>
+    <p className="font-semibold">
+      {selectedBranch.name}
+    </p>
 
+    {selectedBranch.address && (
+      <p>{selectedBranch.address}</p>
+    )}
+
+    {selectedBranch.telephone && (
+      <p>Tel: {selectedBranch.telephone}</p>
+    )}
+
+    {selectedBranch.email && (
+      <p>Email: {selectedBranch.email}</p>
+    )}
+  </div>
+
+  {/* Document Title */}
+  <div className="pt-2 text-center">
+    <h1 className="text-2xl font-black underline decoration-2 underline-offset-4">
+      CONSUMER SAFETY LEVY ESTIMATE
+    </h1>
+  </div>
+
+  {dboName && (
+    <p className="mt-4 text-xs font-bold text-left">
+      To:&nbsp;&nbsp;&nbsp;&nbsp;{dboName}
+    </p>
+  )}
+
+  <div className="flex justify-between pt-6 text-xs font-mono">
+    <span>
+      PRICE PER LITRE: Ksh {pricingMode === 'general' ? (typeof price === 'number' ? price.toFixed(2) : '0.00') : 'Variable'}
+    </span>
+    <span>DATE: {formatDateDDMMYYYY(new Date())}</span>
+  </div>
+</div>
       {/* Header Section (Hidden on Print) */}
       <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 print:hidden">
         <div className="flex flex-col gap-4 w-full lg:w-auto">
@@ -848,33 +840,6 @@ export default function App() {
 
                   <p className="text-[10px] uppercase font-bold tracking-widest">
                     Authorized Signature
-                  </p>
-                </div>
-
-                {/* Official Company Footer - PRINT ONLY */}
-                <div className="company-print-footer">
-                  <p>
-                    <strong>
-                      {companyConfig.company.name || ''}
-                      {companyConfig.company.name ? ' Head Office' : ''}
-                    </strong>
-                    {companyConfig.company.registeredOffice?.address
-                      ? `, ${companyConfig.company.registeredOffice.address}`
-                      : ''}
-                  </p>
-
-                  <p>
-                    {[
-                      companyConfig.company.telephone
-                        ? `Tel: ${companyConfig.company.telephone}`
-                        : '',
-                      companyConfig.company.email
-                        ? `Email: ${companyConfig.company.email}`
-                        : '',
-                      companyConfig.company.website
-                        ? `Website: ${companyConfig.company.website}`
-                        : '',
-                    ].filter(Boolean).join('   |   ')}
                   </p>
                 </div>
               </div>
