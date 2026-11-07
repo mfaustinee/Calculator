@@ -65,7 +65,6 @@ const toTitleCase = (str: string): string => {
 // Helper to format and subtract months
 const getMonthLabel = (baseDate: Date, arrearsIndex: number) => {
   const d = new Date(baseDate);
-  // Pattern: m=0 and m=1 are the same month. m=2 is base-1, m=3 is base-2...
   const monthsToSubtract = arrearsIndex <= 1 ? 0 : arrearsIndex - 1;
   d.setMonth(d.getMonth() - monthsToSubtract);
 
@@ -96,8 +95,6 @@ export default function App() {
   const [price, setPrice] = useState<number | ''>(DEFAULT_PRICE);
   const [pricingMode, setPricingMode] = useState<'general' | 'individual'>('general');
   const [pricesMap, setPricesMap] = useState<Record<number, number | ''>>({});
-
-  // Store litres in a map keyed by arrears index to persist values when count changes
   const [litresMap, setLitresMap] = useState<Record<number, number | ''>>({});
 
   const [signature, setSignature] = useState<string | null>(null);
@@ -150,8 +147,6 @@ export default function App() {
     let syncInFlight = false;
 
     const sync = async () => {
-      // Do not repeatedly attempt network requests while the device is offline,
-      // and do not allow overlapping checks from the timer and browser events.
       if (!navigator.onLine || syncInFlight) return;
 
       syncInFlight = true;
@@ -172,9 +167,6 @@ export default function App() {
         const message = error instanceof Error ? error.message : 'Could not synchronise configuration';
         const status = (error as { status?: number })?.status;
 
-        // Only an explicit server-side rejection (revocation/inactive branch or
-        // missing company setup) blocks the cached installation. Network failures
-        // leave the last approved offline configuration available.
         if (status === 401 || status === 403 || status === 404) {
           setCompanyConfig(null);
           setConfigStatus('error');
@@ -193,8 +185,6 @@ export default function App() {
       if (document.visibilityState === 'visible') void sync();
     };
 
-    // Recheck on startup, reconnection, when the app returns to the foreground,
-    // and every five minutes while open. Offline use remains available.
     void sync();
 
     const intervalId = window.setInterval(() => void sync(), 5 * 60 * 1000);
@@ -233,9 +223,6 @@ export default function App() {
       setActivationCode('');
       setActivationUserName('');
     } catch (error) {
-      // If activation succeeded but the immediate configuration download was
-      // interrupted, recover the newly saved device credential without asking
-      // the user to redeem the now-consumed code again.
       try {
         const recovered = await loadDeviceContext();
 
@@ -298,7 +285,6 @@ export default function App() {
     const count = typeof arrearsCount === 'number' && !isNaN(arrearsCount) ? Math.max(0, arrearsCount) : 0;
     const defaultPriceVal = typeof price === 'number' && !isNaN(price) ? price : 0;
 
-    // We go from 0 to count
     for (let m = 0; m <= count; m++) {
       const monthLabel = getMonthLabel(baseDate, m);
       const rawLitres = litresMap[m];
@@ -318,14 +304,12 @@ export default function App() {
         penaltyRate = 0.25;
         compoundingFactor = 1.0;
       } else if (m > 1) {
-        // Formula: (1.25 * (1.12 ^ (m-1))) - 1
         compoundingFactor = Math.pow(1.12, m - 1);
         penaltyRate = (1.25 * compoundingFactor) - 1;
       }
 
       const penalty = Math.ceil(levy * penaltyRate);
       const amount = levy + penalty;
-      // CF fee is banded based on the amount (levy + penalty)
       const rowCf = litres > 0 ? getBandedCF(amount) : 0;
       const total = litres > 0 ? amount + rowCf : 0;
 
@@ -481,10 +465,41 @@ export default function App() {
 
   return (
     <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-8">
+
+      {/* Print-only footer visibility rules */}
+      <style>{`
+        .company-print-footer {
+          display: none;
+        }
+
+        @media print {
+          .company-print-footer {
+            display: block !important;
+            visibility: visible !important;
+            position: relative !important;
+            width: 100% !important;
+            margin-top: 35px !important;
+            padding-top: 10px !important;
+            border-top: 1px solid #000 !important;
+            text-align: center !important;
+            font-size: 10px !important;
+            line-height: 1.6 !important;
+            color: #000 !important;
+            opacity: 1 !important;
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+
+          .company-print-footer p,
+          .company-print-footer strong {
+            color: #000 !important;
+            visibility: visible !important;
+          }
+        }
+      `}</style>
+
       {/* Official Print Header (Hidden on Screen) */}
       <div className="hidden print:block text-center space-y-1 mb-8 border-b-2 border-black pb-6">
-        
-
         <div className="pt-2 text-center">
           <h1 className="text-2xl font-black underline decoration-2 underline-offset-4">
             CONSUMER SAFETY LEVY ESTIMATE
@@ -836,10 +851,13 @@ export default function App() {
                   </p>
                 </div>
 
-                {/* Official Company Footer */}
-                <footer className="mt-10 border-t border-black pt-3 text-center text-[10px] leading-relaxed text-black print:break-inside-avoid">
+                {/* Official Company Footer - PRINT ONLY */}
+                <div className="company-print-footer">
                   <p>
-                    <strong>{companyConfig.company.name} Head Office</strong>
+                    <strong>
+                      {companyConfig.company.name || ''}
+                      {companyConfig.company.name ? ' Head Office' : ''}
+                    </strong>
                     {companyConfig.company.registeredOffice?.address
                       ? `, ${companyConfig.company.registeredOffice.address}`
                       : ''}
@@ -856,9 +874,9 @@ export default function App() {
                       companyConfig.company.website
                         ? `Website: ${companyConfig.company.website}`
                         : '',
-                    ].filter(Boolean).join('   ')}
+                    ].filter(Boolean).join('   |   ')}
                   </p>
-                </footer>
+                </div>
               </div>
             </div>
           </div>
@@ -1080,4 +1098,4 @@ export default function App() {
       <OfflineIndicator />
     </div>
   );
-}      
+}
