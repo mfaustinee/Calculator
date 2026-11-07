@@ -483,37 +483,7 @@ export default function App() {
     <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-8">
       {/* Official Print Header (Hidden on Screen) */}
       <div className="hidden print:block text-center space-y-1 mb-8 border-b-2 border-black pb-6">
-        {companyConfig && selectedBranch ? (
-          <>
-            <h2 className="text-xl font-bold uppercase">
-              {companyConfig.company.name} - {selectedBranch.name}
-            </h2>
-
-            {selectedBranch.address && (
-              <p className="text-sm">{selectedBranch.address}</p>
-            )}
-
-            {(selectedBranch.telephone || selectedBranch.email || companyConfig.company.website) && (
-              <p className="text-sm">
-                {[
-                  selectedBranch.telephone ? `Tel: ${selectedBranch.telephone}` : '',
-                  selectedBranch.email ? `Email: ${selectedBranch.email}` : '',
-                  companyConfig.company.website ? `Website: ${companyConfig.company.website}` : ''
-                ].filter(Boolean).join(' | ')}
-              </p>
-            )}
-
-            {companyConfig.company.registeredOffice?.address && (
-              <p className="text-xs">
-                Registered Office: {companyConfig.company.registeredOffice.address}
-              </p>
-            )}
-          </>
-        ) : (
-          <div className="p-3 border-2 border-red-600 text-red-700 font-bold text-sm bg-red-50 rounded">
-            CONFIGURATION ERROR: Please select an official issuing branch before printing this estimate.
-          </div>
-        )}
+        
 
         <div className="pt-2 text-center">
           <h1 className="text-2xl font-black underline decoration-2 underline-offset-4">
@@ -865,6 +835,30 @@ export default function App() {
                     Authorized Signature
                   </p>
                 </div>
+
+                {/* Official Company Footer */}
+                <footer className="mt-10 border-t border-black pt-3 text-center text-[10px] leading-relaxed text-black print:break-inside-avoid">
+                  <p>
+                    <strong>{companyConfig.company.name} Head Office</strong>
+                    {companyConfig.company.registeredOffice?.address
+                      ? `, ${companyConfig.company.registeredOffice.address}`
+                      : ''}
+                  </p>
+
+                  <p>
+                    {[
+                      companyConfig.company.telephone
+                        ? `Tel: ${companyConfig.company.telephone}`
+                        : '',
+                      companyConfig.company.email
+                        ? `Email: ${companyConfig.company.email}`
+                        : '',
+                      companyConfig.company.website
+                        ? `Website: ${companyConfig.company.website}`
+                        : '',
+                    ].filter(Boolean).join('   ')}
+                  </p>
+                </footer>
               </div>
             </div>
           </div>
@@ -1082,36 +1076,8 @@ export default function App() {
         </div>
       </div>
 
-            {/* Official Print Footer (Hidden on Screen) */}
-      <footer className="hidden print:block mt-8 border-t border-black pt-3 text-center text-[10px] leading-relaxed text-black">
-        {companyConfig && (
-          <>
-            <p>
-              <strong>{companyConfig.company.name} Head Office</strong>
-              {companyConfig.company.registeredOffice?.address
-                ? `, ${companyConfig.company.registeredOffice.address}`
-                : ''}
-            </p>
-
-            <p>
-              {[
-                companyConfig.company.registeredOffice?.telephone
-                  ? `Tel: ${companyConfig.company.registeredOffice.telephone}`
-                  : '',
-                companyConfig.company.registeredOffice?.email
-                  ? `Email: ${companyConfig.company.registeredOffice.email}`
-                  : '',
-                companyConfig.company.website
-                  ? `Website: ${companyConfig.company.website}`
-                  : '',
-              ].filter(Boolean).join('   ')}
-            </p>
-          </>
-        )}
-      </footer>
-
       {/* Offline Status Toast */}
       <OfflineIndicator />
     </div>
   );
-}
+}      

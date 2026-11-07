@@ -129,7 +129,7 @@ body {
   .no-print, 
   header button, 
   .glass-card button,
-  footer,
+  footer:not(.print\:block),
   aside,
   .recharts-responsive-container {
     display: none !important;

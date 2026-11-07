@@ -4,6 +4,8 @@ export interface CompanyConfig {
   company: {
     name: string;
     website?: string;
+    telephone?: string;
+    email?: string;
     registeredOffice?: {
       address?: string;
       telephone?: string;
@@ -134,6 +136,8 @@ function mapServerConfiguration(payload: any): CompanyConfig {
     company: {
       name: company.company_name,
       website: company.website || undefined,
+      telephone: company.telephone || undefined,
+      email: company.email || undefined,
       registeredOffice: {
         address: company.registered_office || undefined,
         telephone: company.telephone || undefined,
