@@ -130,15 +130,24 @@ export default function App() {
 
   useEffect(() => {
     if (!deviceContext) return;
+    let mounted = true;
+    let syncInFlight = false;
+
     const sync = async () => {
+      // Do not repeatedly attempt network requests while the device is offline,
+      // and do not allow overlapping checks from the timer and browser events.
+      if (!navigator.onLine || syncInFlight) return;
+      syncInFlight = true;
       try {
         const updated = await refreshDeviceConfiguration(deviceContext);
+        if (!mounted) return;
         setDeviceContext(updated);
         setCompanyConfig(updated.config);
         setConfigSource('network');
         setConfigStatus('ready');
         setConfigError('');
       } catch (error) {
+        if (!mounted) return;
         const message = error instanceof Error ? error.message : 'Could not synchronise configuration';
         const status = (error as { status?: number })?.status;
         // Only an explicit server-side rejection (revocation/inactive branch or
@@ -153,10 +162,28 @@ export default function App() {
           setConfigSource('local');
           setConfigStatus('ready');
         }
+      } finally {
+        syncInFlight = false;
       }
     };
+
+    const syncWhenVisible = () => {
+      if (document.visibilityState === 'visible') void sync();
+    };
+
+    // Recheck on startup, reconnection, when the app returns to the foreground,
+    // and every five minutes while open. Offline use remains available.
+    void sync();
+    const intervalId = window.setInterval(() => void sync(), 5 * 60 * 1000);
     window.addEventListener('online', sync);
-    return () => window.removeEventListener('online', sync);
+    document.addEventListener('visibilitychange', syncWhenVisible);
+
+    return () => {
+      mounted = false;
+      window.clearInterval(intervalId);
+      window.removeEventListener('online', sync);
+      document.removeEventListener('visibilitychange', syncWhenVisible);
+    };
   }, [deviceContext]);
 
   const selectedBranch = companyConfig?.branch ?? null;

@@ -148,6 +148,7 @@ export async function activateDevice(activationCode: string): Promise<DeviceCont
     response = await fetch(`${API_BASE_URL}/api/device/activate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
       body: JSON.stringify({ activation_code: activationCode.trim() }),
     });
   } catch {

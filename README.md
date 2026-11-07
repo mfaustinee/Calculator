@@ -4,64 +4,37 @@ Offline-capable Progressive Web App for preparing Consumer Safety Levy estimates
 
 ## Company and branch configuration
 
-The official company and branch details are maintained in:
+Company and branch details are managed centrally by the administrator through the separate KDB Levy Administration dashboard. They are **not** maintained in this project as a public JSON file, and ordinary calculator users cannot edit the official company or branch details.
 
-`public/company-config.json`
+The public calculator obtains its assigned configuration from the KDB Levy API after device activation. Each installation is assigned to one branch through a single-use activation code. The API uses the installation credential to identify the installation and retrieve its assigned branch; the browser does not choose or submit a branch ID.
 
-This is a static configuration file served by Cloudflare Pages. It is not a database. To update company details or add, edit, deactivate, or remove a branch:
+To add or update company and branch details:
 
-1. Edit `public/company-config.json` in the project.
-2. Increase the numeric `version` value.
-3. Update `lastUpdated` using `YYYY-MM-DD`.
-4. Commit/publish the updated project to the Cloudflare Pages production deployment.
-5. Each installation receives the new configuration through the PWA's service-worker update. It must reconnect to the internet to receive the update; until then it continues using its last cached configuration.
+1. Sign in to the administrator dashboard using the authorised administrator account.
+2. Update the company details or create/update the required branch.
+3. Generate a single-use activation code for the branch when activating a new device.
+4. Enter that code in the calculator on the device being assigned.
 
-Keep branch `id` values stable once they are in use. Set `active` to `false` to remove a branch from the branch selector without deleting its historical identity from the configuration.
+Keep activation codes private. Each code can be redeemed once. The device credential is saved in that browser/PWA installation and is not displayed again after activation. If the browser profile or device storage is cleared, the device may need a new activation code.
 
-Example:
+## Device authorisation and offline use
 
-```json
-{
-  "version": 2,
-  "lastUpdated": "2026-11-02",
-  "company": {
-    "name": "Kenya Dairy Board",
-    "website": "www.kdb.go.ke",
-    "registeredOffice": {
-      "address": "",
-      "telephone": "",
-      "email": ""
-    }
-  },
-  "branches": [
-    {
-      "id": "kericho",
-      "name": "Kericho Office",
-      "address": "Ardhi House (Huduma Centre), 5th Floor, Wing B.",
-      "telephone": "0717997465",
-      "email": "Kericho@kdb.co.ke",
-      "active": true
-    }
-  ]
-}
+- First-time activation requires an internet connection.
+- After activation, the assigned company and branch configuration is saved locally in IndexedDB.
+- The calculator can continue operating offline using the last successfully downloaded configuration.
+- When online, the app checks its authorisation at startup, when the connection returns, when the app becomes visible again, and periodically while it remains open.
+- A revoked device or inactive branch is blocked the next time the device successfully contacts the API. Revocation cannot be delivered while a device is offline.
+- Ordinary connection failures do not erase the saved configuration or prevent offline calculations.
+
+## Environment configuration
+
+Set the API base URL in the build environment:
+
+```env
+VITE_API_BASE_URL=https://YOUR-KDB-LEVY-API-WORKER.workers.dev
 ```
 
-Only enter verified official contact details. The registered office is separate from branch addresses and is displayed only when its address is populated.
-
-## Default branch per installation
-
-The first time the app loads its configuration:
-
-- If there is exactly one active branch, that branch is selected automatically.
-- If there are multiple active branches, the user selects the branch assigned to that computer/PWA installation.
-- The selected branch is saved in that browser/PWA installation's local storage and reused for subsequent estimates.
-- The branch selector remains available if a computer is reassigned to another office.
-
-The selected branch is local to the browser profile/device. It is not a centrally enforced user identity, and it does not prevent a user from changing the selection. This approach is suitable for convenience and document branding, not access control.
-
-## Offline behaviour
-
-The company configuration JSON is included in the PWA precache. The app also keeps a validated copy in IndexedDB as a fallback. After a deployment, an installation must connect and complete its service-worker update before it can use the new configuration. Offline installations continue using the last valid cached copy.
+For the existing production deployment, retain the configured KDB API Worker URL. Do not put activation codes, device credentials, administrator credentials, or private company data in frontend environment variables or source files. Only the public API base URL belongs in `VITE_API_BASE_URL`.
 
 ## Development
 
@@ -77,4 +50,8 @@ npm run build
 npm run preview
 ```
 
-Deploy the generated `dist` directory using the existing Cloudflare Pages project/build settings.
+The production build is written to `dist`. Deploy the generated build using the existing Cloudflare Pages/GStudio workflow and preserve the configured `VITE_API_BASE_URL` environment variable.
+
+## Important deployment note
+
+This archive contains the calculator frontend. It does not replace or deploy the separate Cloudflare API Worker, administrator Worker, or D1 database. Those services must remain deployed and configured as they are for activation, branch assignment, central configuration management, and device authorisation to work.
