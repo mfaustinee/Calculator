@@ -1082,9 +1082,33 @@ export default function App() {
         </div>
       </div>
 
-      {/* Official Print Footer (Hidden on Print) */}
-      <div className="hidden print:block pt-8 border-t border-zinc-200 mt-8">
-      </div>
+            {/* Official Print Footer (Hidden on Screen) */}
+      <footer className="hidden print:block mt-8 border-t border-black pt-3 text-center text-[10px] leading-relaxed text-black">
+        {companyConfig && (
+          <>
+            <p>
+              <strong>{companyConfig.company.name} Head Office</strong>
+              {companyConfig.company.registeredOffice?.address
+                ? `, ${companyConfig.company.registeredOffice.address}`
+                : ''}
+            </p>
+
+            <p>
+              {[
+                companyConfig.company.registeredOffice?.telephone
+                  ? `Tel: ${companyConfig.company.registeredOffice.telephone}`
+                  : '',
+                companyConfig.company.registeredOffice?.email
+                  ? `Email: ${companyConfig.company.registeredOffice.email}`
+                  : '',
+                companyConfig.company.website
+                  ? `Website: ${companyConfig.company.website}`
+                  : '',
+              ].filter(Boolean).join('   ')}
+            </p>
+          </>
+        )}
+      </footer>
 
       {/* Offline Status Toast */}
       <OfflineIndicator />
